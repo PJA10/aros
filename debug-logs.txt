@@ -1,0 +1,44 @@
+debug: boot - OK
+0 Base 10- 0 Base 16
+1 Base 10- 1 Base 16
+2 Base 10- 2 Base 16
+3 Base 10- 3 Base 16
+4 Base 10- 4 Base 16
+5 Base 10- 5 Base 16
+6 Base 10- 6 Base 16
+7 Base 10- 7 Base 16
+8 Base 10- 8 Base 16
+9 Base 10- 9 Base 16
+10 Base 10- a Base 16
+11 Base 10- b Base 16
+12 Base 10- c Base 16
+13 Base 10- d Base 16
+14 Base 10- e Base 16
+15 Base 10- f Base 16
+16 Base 10- 10 Base 16
+17 Base 10- 11 Base 16
+18 Base 10- 12 Base 16
+19 Base 10- 13 Base 16
+20 Base 10- 14 Base 16
+21 Base 10- 15 Base 16
+22 Base 10- 16 Base 16
+23 Base 10- 17 Base 16
+24 Base 10- 18 Base 16
+25 Base 10- 19 Base 16
+26 Base 10- 1a Base 16
+27 Base 10- 1b Base 16
+28 Base 10- 1c Base 16
+29 Base 10- 1d Base 16
+30 Base 10- 1e Base 16
+31 Base 10- 1f Base 16
+32 Base 10- 20 Base 16
+33 Base 10- 21 Base 16
+34 Base 10- 22 Base 16
+35 Base 10- 23 Base 16
+36 Base 10- 24 Base 16
+37 Base 10- 25 Base 16
+38 Base 10- 26 Base 16
+39 Base 10- 27 Base 16
+debug: terminal scrolling  - OK
+itamar is a noob
+debug: serial debug - OK

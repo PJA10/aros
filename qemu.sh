@@ -2,4 +2,6 @@
 set -e
 . ./iso.sh
 
-qemu-system-$(./target-triplet-to-arch.sh $HOST) -cdrom myos.iso
+DEBUG_FILE="debug-logs.txt"
+
+qemu-system-$(./target-triplet-to-arch.sh $HOST) -serial stdio -cdrom aros.iso | tee $DEBUG_FILE

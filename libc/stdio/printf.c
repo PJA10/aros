@@ -3,6 +3,9 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+
+#define MAX_NUM_DIGITS 50
 
 static bool print(const char* data, size_t length) {
 	const unsigned char* bytes = (const unsigned char*) data;
@@ -23,7 +26,7 @@ int printf(const char* restrict format, ...) {
 
 		if (format[0] != '%' || format[1] == '%') {
 			if (format[0] == '%')
-				format++;
+			format++;
 			size_t amount = 1;
 			while (format[amount] && format[amount] != '%')
 				amount++;
@@ -61,6 +64,59 @@ int printf(const char* restrict format, ...) {
 			if (!print(str, len))
 				return -1;
 			written += len;
+		}else if (*format == 'd') {
+			format++;
+			int num = va_arg(parameters, int);
+			char str[MAX_NUM_DIGITS];
+			char *strPtr;
+			if (!(strPtr = itoa(num, str, 10))) { // convert to string in base10
+				// TODO: set error msg
+				return -1;
+			}
+			size_t len = strlen(strPtr);
+			if (maxrem < len) {
+                                // TODO: Set errno to EOVERFLOW.
+                                return -1;
+                        }
+			if (!print(strPtr, len))
+                                return -1;
+			written += len;
+		}else if (*format == 'x') {
+                        format++;
+                        unsigned int num = va_arg(parameters, unsigned int);
+                        char str[MAX_NUM_DIGITS];
+                        char *strPtr;
+                        if (!(strPtr = itoa(num, str, 16))) { // convert to string in base16
+                                // TODO: set error msg
+                                return -1;
+                        }
+                        size_t len = strlen(strPtr);
+                        if (maxrem < len) {
+                                // TODO: Set errno to EOVERFLOW.
+                                return -1;
+                        }
+                        if (!print(strPtr, len))
+                                return -1;
+                        written += len;
+		} else if (*format == 'p') {
+			format++;
+			unsigned int ptr = (int) va_arg(parameters, void *);
+			char str[MAX_NUM_DIGITS];
+                        char *strPtr;
+                        if (!(strPtr = itoa(ptr, str, 16))) { // convert to string in base16
+                                // TODO: set error msg
+                                return -1;
+                        }
+                        size_t len = strlen(strPtr) + 2; // for the prefix 0x
+                        if (maxrem < len) {
+                                // TODO: Set errno to EOVERFLOW.
+                                return -1;
+                        }
+			if (!print("0x", 2))
+                                return -1;
+                        if (!print(strPtr, len))
+                                return -1;
+                        written += len;
 		} else {
 			format = format_begun_at;
 			size_t len = strlen(format);
