@@ -26,9 +26,46 @@ stack_top:
 _start:
 	movl $stack_top, %esp
 
+	 #global descriptor table
+	jmp load_gdt
+gdt:
+
+gdt_null:
+	.quad 0
+
+gdt_code:
+	.word 0xFFFF
+	.word 0
+
+	.byte 0
+	.byte 0b10011010
+	.byte 0b11001111
+	.byte 0
+
+gdt_data:
+	.word 0xFFFF
+	.word 0
+
+	.byte 0
+	.byte 0b10010010
+	.byte 0b11001111
+	.byte 0
+
+gdt_end:
+
+gdt_desc:
+	.word gdt_end - gdt - 1
+	.4byte gdt
+
+#load gdt
+load_gdt:
+	cli  #disable interrupts
+	lgdt (gdt_desc)  #load GDT
+	sti  #enable interrupts
+
 	# Call the global constructors.
 	call _init
-
+	# int $33
 	# Transfer control to the main kernel.
 	call kernel_main
 
@@ -37,3 +74,11 @@ _start:
 1:	hlt
 	jmp 1b
 .size _start, . - _start
+
+.global load_idt
+load_idt:
+	movl 4(%esp), %edx
+	lidt (%edx)
+	sti
+	ret
+

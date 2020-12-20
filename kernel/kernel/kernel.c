@@ -2,16 +2,19 @@
 
 #include <kernel/tty.h>
 #include <kernel/serial.h>
+#include <kernel/idt.h>
+#include <kernel/pic.h>
 
 void kernel_main(void) {
 	terminal_initialize();
 	init_serial();
-	str_write_serial("debug: boot - OK\n");
-	for(int i = 0; i < 40; i++) {
-		printf("%d Base 10- %x Base 16\n", i,i);
-	}
-	printf("debug: terminal scrolling  - OK\n");
-	printf("itamar is a noob\n");
-	str_write_serial("debug: serial debug - OK\n");
+	idt_init();
+	//int eip;
+	//asm("movl %eax, (%esp)
+	//     movl %)
+	//printf("%p\n");
+	printf("idt_init finished\n");
+	IRQ_clear_mask((unsigned char)1);
+	asm("int $33");
 }
 
