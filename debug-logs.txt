@@ -1,1 +1,2 @@
 idt_init finished
+irq1 handler

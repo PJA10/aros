@@ -14,7 +14,8 @@ void kernel_main(void) {
 	//     movl %)
 	//printf("%p\n");
 	printf("idt_init finished\n");
-	IRQ_clear_mask((unsigned char)1);
+	//IRQ_clear_mask((unsigned char)1);
+	asm("int $32");
 	asm("int $33");
 }
 
