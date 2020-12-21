@@ -2,83 +2,6 @@
 #include <kernel/interrupt_handler.h>
 #include <sys/io.h>
 #include <stdio.h>
-/*
-void irq0_handler(void) {
-          outb(0x20, 0x20); //EOI
-}
-
-void irq1_handler(void) {
-	unsigned char scan_code = inb(0x60);
-	printf("IRQ1 handler - keybord interrupt - key preesed: %x\n", scan_code);
-	outb(0x20, 0x20); //EOI
-}
-
-
-void irq2_handler(void) {
-          outb(0x20, 0x20); //EOI
-}
- 
-void irq3_handler(void) {
-          outb(0x20, 0x20); //EOI
-}
- 
-void irq4_handler(void) {
-          outb(0x20, 0x20); //EOI
-}
- 
-void irq5_handler(void) {
-          outb(0x20, 0x20); //EOI
-}
- 
-void irq6_handler(void) {
-          outb(0x20, 0x20); //EOI
-}
- 
-void irq7_handler(void) {
-          outb(0x20, 0x20); //EOI
-}
- 
-void irq8_handler(void) {
-          outb(0xA0, 0x20);
-          outb(0x20, 0x20); //EOI          
-}
- 
-void irq9_handler(void) {
-          outb(0xA0, 0x20);
-          outb(0x20, 0x20); //EOI
-}
- 
-void irq10_handler(void) {
-          outb(0xA0, 0x20);
-          outb(0x20, 0x20); //EOI
-}
- 
-void irq11_handler(void) {
-          outb(0xA0, 0x20);
-          outb(0x20, 0x20); //EOI
-}
- 
-void irq12_handler(void) {
-	printf("IRQ12 handler -PS2 Mouse\n");
-	outb(0xA0, 0x20);
-	outb(0x20, 0x20); //EOI
-}
- 
-void irq13_handler(void) {
-          outb(0xA0, 0x20);
-          outb(0x20, 0x20); //EOI
-}
- 
-void irq14_handler(void) {
-          outb(0xA0, 0x20);
-          outb(0x20, 0x20); //EOI
-}
- 
-void irq15_handler(void) {
-          outb(0xA0, 0x20);
-          outb(0x20, 0x20); //EOI
-}
-*/
 
 __attribute__((interrupt)) void irq0_handler(struct interrupt_frame* frame)
 {
@@ -88,7 +11,7 @@ __attribute__((interrupt)) void irq0_handler(struct interrupt_frame* frame)
 __attribute__((interrupt)) void irq1_handler(struct interrupt_frame* frame)
 {
 	unsigned char scan_code = inb(0x60);
-	printf("IRQ1 handler - keybord interrupt - key preesed: %x\n", scan_code);
+	printf("IRQ1 handler - keybord interrupt - key preesed: 0x%x\n", scan_code);
 	PIC_sendEOI((unsigned char)1);
 }
 
@@ -119,6 +42,11 @@ __attribute__((interrupt)) void irq6_handler(struct interrupt_frame* frame)
 
 __attribute__((interrupt)) void irq7_handler(struct interrupt_frame* frame)
 {
+	unsigned char irr = pic_get_irr();
+	printf("IRQ7 - irr: 0x%x\n", irr);
+	if (!(irr & 0x80)) { // spurious IRQ
+		return;
+	}
 	PIC_sendEOI((unsigned char)7);
 }
 

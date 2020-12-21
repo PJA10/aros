@@ -1,9 +1,7 @@
 idt_init finished
-IRQ1 handler - keybord interrupt - key preesed: 9c
-IRQ12 handler -PS2 Mouse
-after int $0x2c
+isr: 0x0
 kernel finished - hlting
-IRQ1 handler - keybord interrupt - key preesed: 1e
-IRQ1 handler - keybord interrupt - key preesed: 9e
-IRQ1 handler - keybord interrupt - key preesed: 1d
-IRQ1 handler - keybord interrupt - key preesed: 38
+IRQ1 handler - keybord interrupt - key preesed: 0x1e
+IRQ1 handler - keybord interrupt - key preesed: 0x9e
+IRQ1 handler - keybord interrupt - key preesed: 0x1d
+IRQ1 handler - keybord interrupt - key preesed: 0x38
