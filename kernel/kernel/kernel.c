@@ -14,8 +14,14 @@ void kernel_main(void) {
 	//     movl %)
 	//printf("%p\n");
 	printf("idt_init finished\n");
-	//IRQ_clear_mask((unsigned char)1);
-	asm("int $32");
+	IRQ_clear_mask((unsigned char)1);
+	IRQ_set_mask((unsigned char)0);
 	asm("int $33");
+	asm("int $0x2c");
+	printf("after int $0x2c\n");
+	printf("kernel finished - hlting\n");
+	for(;;) {
+		asm("hlt");
+	}
 }
 
