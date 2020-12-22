@@ -1,7 +1,25 @@
 #include <kernel/pic.h>
 #include <kernel/interrupt_handler.h>
+
 #include <sys/io.h>
+
 #include <stdio.h>
+#include <stdlib.h>
+
+
+__attribute__((interrupt)) void divide_by_zero_handler(struct interrupt_frame* frame)
+{
+	printf("fatal error - division by zero\n");
+	printf("IP: %x, CS: %x, EFLAGS: %x\n", frame->EIP, frame->CS, frame->EFLAGS);
+	abort();
+}
+
+__attribute__((interrupt)) void double_fault_handler(struct interrupt_frame* frame, int error_code)
+{
+	printf("fatal error - double fault\n");
+	printf("IP: %x(undefined), CS: %x(undefined), EFLAGS: %x\n", frame->EIP, frame->CS, frame->EFLAGS);
+	abort();
+}
 
 __attribute__((interrupt)) void irq0_handler(struct interrupt_frame* frame)
 {
@@ -12,6 +30,7 @@ __attribute__((interrupt)) void irq1_handler(struct interrupt_frame* frame)
 {
 	unsigned char scan_code = inb(0x60);
 	printf("IRQ1 handler - keybord interrupt - key preesed: 0x%x\n", scan_code);
+	printf("IP: %x, CS: %x, EFLAGS: %x\n", frame->EIP, frame->CS, frame->EFLAGS);
 	PIC_sendEOI((unsigned char)1);
 }
 

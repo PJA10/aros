@@ -38,6 +38,20 @@ void idt_init(void) {
 	IRQ_set_mask((unsigned char) 0); // mask timer timer interrupt
 	IRQ_clear_mask((unsigned char) 1); // unmask keybord interrupt
 
+	unsigned long exception0_address = (unsigned long)divide_by_zero_handler;
+	IDT[0].offset_lowerbits = exception0_address & 0xffff;
+	IDT[0].selector = 0x08; /* KERNEL_CODE_SEGMENT_OFFSET */
+	IDT[0].zero = 0;
+	IDT[0].type_attr = 0x8f; /* TRAP_GATE */
+	IDT[0].offset_higherbits = (exception0_address & 0xffff0000) >> 16;
+
+	unsigned long exception8_address = (unsigned long)double_fault_handler;
+	IDT[8].offset_lowerbits = exception8_address & 0xffff;
+	IDT[8].selector = 0x08; /* KERNEL_CODE_SEGMENT_OFFSET */
+	IDT[8].zero = 0;
+	IDT[8].type_attr = 0x8f; /* TRAP_GATE */
+	IDT[8].offset_higherbits = (exception8_address & 0xffff0000) >> 16;
+
 	irq0_address = (unsigned long)irq0_handler;
 	IDT[32].offset_lowerbits = irq0_address & 0xffff;
 	IDT[32].selector = 0x08; /* KERNEL_CODE_SEGMENT_OFFSET */
