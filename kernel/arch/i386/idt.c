@@ -45,12 +45,48 @@ void idt_init(void) {
 	IDT[0].type_attr = 0x8f; /* TRAP_GATE */
 	IDT[0].offset_higherbits = (exception0_address & 0xffff0000) >> 16;
 
+	unsigned long exception5_address = (unsigned long)bound_range_exceeded_handler;
+	IDT[5].offset_lowerbits = exception5_address & 0xffff;
+	IDT[5].selector = 0x08; /* KERNEL_CODE_SEGMENT_OFFSET */
+	IDT[5].zero = 0;
+	IDT[5].type_attr = 0x8f; /* TRAP_GATE */
+	IDT[5].offset_higherbits = (exception5_address & 0xffff0000) >> 16;
+
+	unsigned long exception6_address = (unsigned long)invalid_opcode_handler;
+	IDT[6].offset_lowerbits = exception6_address & 0xffff;
+	IDT[6].selector = 0x08; /* KERNEL_CODE_SEGMENT_OFFSET */
+	IDT[6].zero = 0;
+	IDT[6].type_attr = 0x8f; /* TRAP_GATE */
+	IDT[6].offset_higherbits = (exception6_address & 0xffff0000) >> 16;
+
 	unsigned long exception8_address = (unsigned long)double_fault_handler;
 	IDT[8].offset_lowerbits = exception8_address & 0xffff;
 	IDT[8].selector = 0x08; /* KERNEL_CODE_SEGMENT_OFFSET */
 	IDT[8].zero = 0;
 	IDT[8].type_attr = 0x8f; /* TRAP_GATE */
 	IDT[8].offset_higherbits = (exception8_address & 0xffff0000) >> 16;
+
+	unsigned long exception10_address = (unsigned long)invalid_TSS_handler;
+	IDT[10].offset_lowerbits = exception10_address & 0xffff;
+	IDT[10].selector = 0x08; /* KERNEL_CODE_SEGMENT_OFFSET */
+	IDT[10].zero = 0;
+	IDT[10].type_attr = 0x8f; /* TRAP_GATE */
+	IDT[10].offset_higherbits = (exception10_address & 0xffff0000) >> 16;
+
+	unsigned long exception12_address = (unsigned long)stack_segment_fault_handler;
+	IDT[12].offset_lowerbits = exception12_address & 0xffff;
+	IDT[12].selector = 0x08; /* KERNEL_CODE_SEGMENT_OFFSET */
+	IDT[12].zero = 0;
+	IDT[12].type_attr = 0x8f; /* TRAP_GATE */
+	IDT[12].offset_higherbits = (exception12_address & 0xffff0000) >> 16;
+
+
+	unsigned long exception13_address = (unsigned long)general_protection_fault_handler;
+	IDT[12].offset_lowerbits = exception13_address & 0xffff;
+	IDT[12].selector = 0x08; /* KERNEL_CODE_SEGMENT_OFFSET */
+	IDT[12].zero = 0;
+	IDT[12].type_attr = 0x8f; /* TRAP_GATE */
+	IDT[12].offset_higherbits = (exception13_address & 0xffff0000) >> 16;
 
 	irq0_address = (unsigned long)irq0_handler;
 	IDT[32].offset_lowerbits = irq0_address & 0xffff;

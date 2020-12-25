@@ -26,6 +26,7 @@ LOAD arch/i386/serial.o
 LOAD arch/i386/pic.o
 LOAD arch/i386/interrupt_handler.o
 LOAD arch/i386/idt.o
+LOAD arch/i386/gdt.o
 LOAD kernel/kernel.o
 LOAD /home/ubuntu/aros/sysroot/usr/lib/libk.a
 LOAD /home/ubuntu/opt/cross/lib/gcc/i686-elf/10.2.0/libgcc.a
@@ -33,124 +34,135 @@ LOAD arch/i386/crtend.o
 LOAD arch/i386/crtn.o
                 0x0000000000100000                . = 0x100000
 
-.text           0x0000000000100000     0x12d1
+.text           0x0000000000100000     0x1561
  *(.multiboot)
  .multiboot     0x0000000000100000        0xc arch/i386/boot.o
  *(.text)
  .text          0x000000000010000c        0x0 arch/i386/crti.o
  *fill*         0x000000000010000c        0x4 
  .text          0x0000000000100010      0x145 arch/i386/crtbegin.o
- .text          0x0000000000100155       0x5b arch/i386/boot.o
+ .text          0x0000000000100155       0x3f arch/i386/boot.o
                 0x0000000000100155                _start
-                0x00000000001001a7                load_idt
- .text          0x00000000001001b0      0x2d3 arch/i386/tty.o
-                0x00000000001001b0                terminal_initialize
-                0x0000000000100210                terminal_setcolor
-                0x0000000000100220                terminal_putentryat
-                0x0000000000100250                terminal_scrollraw
-                0x00000000001002d0                terminal_putchar
-                0x0000000000100340                terminal_write
-                0x00000000001003e0                terminal_writestring
- *fill*         0x0000000000100483        0xd 
- .text          0x0000000000100490       0xfc arch/i386/serial.o
-                0x0000000000100490                init_serial
-                0x00000000001004f0                serial_received
-                0x0000000000100500                read_serial
-                0x0000000000100520                is_transmit_empty
-                0x0000000000100530                write_serial
-                0x0000000000100550                str_write_serial
- *fill*         0x000000000010058c        0x4 
- .text          0x0000000000100590      0x148 arch/i386/pic.o
-                0x0000000000100590                PIC_remap
-                0x0000000000100600                PIC_sendEOI
-                0x0000000000100620                IRQ_set_mask
-                0x0000000000100660                IRQ_clear_mask
-                0x00000000001006a0                pic_get_irr
-                0x00000000001006c0                pic_get_isr
- *fill*         0x00000000001006d8        0x8 
- .text          0x00000000001006e0      0x2ef arch/i386/interrupt_handler.o
-                0x00000000001006e0                divide_by_zero_handler
-                0x0000000000100720                double_fault_handler
-                0x0000000000100760                irq0_handler
-                0x0000000000100780                irq1_handler
-                0x00000000001007d0                irq2_handler
-                0x00000000001007f0                irq3_handler
-                0x0000000000100810                irq4_handler
-                0x0000000000100830                irq5_handler
-                0x0000000000100850                irq6_handler
-                0x0000000000100870                irq7_handler
-                0x00000000001008c0                irq8_handler
-                0x00000000001008e0                irq9_handler
-                0x0000000000100900                irq10_handler
-                0x0000000000100920                irq11_handler
-                0x0000000000100940                irq12_handler
-                0x0000000000100970                irq13_handler
-                0x0000000000100990                irq14_handler
-                0x00000000001009b0                irq15_handler
- *fill*         0x00000000001009cf        0x1 
- .text          0x00000000001009d0      0x290 arch/i386/idt.o
-                0x00000000001009d0                idt_init
- .text          0x0000000000100c60       0x43 kernel/kernel.o
-                0x0000000000100c60                kernel_main
- *fill*         0x0000000000100ca3        0xd 
- .text          0x0000000000100cb0      0x44c /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
-                0x0000000000100cb0                printf
- *fill*         0x00000000001010fc        0x4 
- .text          0x0000000000101100       0x2b /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
-                0x0000000000101100                putchar
- *fill*         0x000000000010112b        0x5 
- .text          0x0000000000101130       0x15 /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
-                0x0000000000101130                abort
- *fill*         0x0000000000101145        0xb 
- .text          0x0000000000101150      0x112 /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
-                0x0000000000101150                reverse_string
-                0x0000000000101190                itoa
- *fill*         0x0000000000101262        0xe 
- .text          0x0000000000101270       0x1b /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
-                0x0000000000101270                strlen
- *fill*         0x000000000010128b        0x5 
- .text          0x0000000000101290       0x41 arch/i386/crtend.o
- .text          0x00000000001012d1        0x0 arch/i386/crtn.o
+                0x000000000010016d                load_idt
+                0x0000000000100176                load_gdt
+ *fill*         0x0000000000100194        0xc 
+ .text          0x00000000001001a0      0x2d3 arch/i386/tty.o
+                0x00000000001001a0                terminal_initialize
+                0x0000000000100200                terminal_setcolor
+                0x0000000000100210                terminal_putentryat
+                0x0000000000100240                terminal_scrollraw
+                0x00000000001002c0                terminal_putchar
+                0x0000000000100330                terminal_write
+                0x00000000001003d0                terminal_writestring
+ *fill*         0x0000000000100473        0xd 
+ .text          0x0000000000100480       0xfc arch/i386/serial.o
+                0x0000000000100480                init_serial
+                0x00000000001004e0                serial_received
+                0x00000000001004f0                read_serial
+                0x0000000000100510                is_transmit_empty
+                0x0000000000100520                write_serial
+                0x0000000000100540                str_write_serial
+ *fill*         0x000000000010057c        0x4 
+ .text          0x0000000000100580      0x148 arch/i386/pic.o
+                0x0000000000100580                PIC_remap
+                0x00000000001005f0                PIC_sendEOI
+                0x0000000000100610                IRQ_set_mask
+                0x0000000000100650                IRQ_clear_mask
+                0x0000000000100690                pic_get_irr
+                0x00000000001006b0                pic_get_isr
+ *fill*         0x00000000001006c8        0x8 
+ .text          0x00000000001006d0      0x42f arch/i386/interrupt_handler.o
+                0x00000000001006d0                divide_by_zero_handler
+                0x0000000000100710                double_fault_handler
+                0x0000000000100750                bound_range_exceeded_handler
+                0x0000000000100790                invalid_opcode_handler
+                0x00000000001007d0                invalid_TSS_handler
+                0x0000000000100810                stack_segment_fault_handler
+                0x0000000000100850                general_protection_fault_handler
+                0x0000000000100890                irq0_handler
+                0x00000000001008b0                irq1_handler
+                0x0000000000100900                irq2_handler
+                0x0000000000100920                irq3_handler
+                0x0000000000100940                irq4_handler
+                0x0000000000100960                irq5_handler
+                0x0000000000100980                irq6_handler
+                0x00000000001009a0                irq7_handler
+                0x00000000001009f0                irq8_handler
+                0x0000000000100a10                irq9_handler
+                0x0000000000100a30                irq10_handler
+                0x0000000000100a50                irq11_handler
+                0x0000000000100a70                irq12_handler
+                0x0000000000100aa0                irq13_handler
+                0x0000000000100ac0                irq14_handler
+                0x0000000000100ae0                irq15_handler
+ *fill*         0x0000000000100aff        0x1 
+ .text          0x0000000000100b00      0x310 arch/i386/idt.o
+                0x0000000000100b00                idt_init
+ .text          0x0000000000100e10       0xde arch/i386/gdt.o
+                0x0000000000100e10                create_descriptor
+                0x0000000000100e60                gdt_init
+ *fill*         0x0000000000100eee        0x2 
+ .text          0x0000000000100ef0       0x43 kernel/kernel.o
+                0x0000000000100ef0                kernel_main
+ *fill*         0x0000000000100f33        0xd 
+ .text          0x0000000000100f40      0x44c /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
+                0x0000000000100f40                printf
+ *fill*         0x000000000010138c        0x4 
+ .text          0x0000000000101390       0x2b /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
+                0x0000000000101390                putchar
+ *fill*         0x00000000001013bb        0x5 
+ .text          0x00000000001013c0       0x12 /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
+                0x00000000001013c0                abort
+ *fill*         0x00000000001013d2        0xe 
+ .text          0x00000000001013e0      0x112 /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
+                0x00000000001013e0                reverse_string
+                0x0000000000101420                itoa
+ *fill*         0x00000000001014f2        0xe 
+ .text          0x0000000000101500       0x1b /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
+                0x0000000000101500                strlen
+ *fill*         0x000000000010151b        0x5 
+ .text          0x0000000000101520       0x41 arch/i386/crtend.o
+ .text          0x0000000000101561        0x0 arch/i386/crtn.o
 
-.init           0x00000000001012d1        0xf
- .init          0x00000000001012d1        0x3 arch/i386/crti.o
-                0x00000000001012d1                _init
- .init          0x00000000001012d4        0x5 arch/i386/crtbegin.o
- .init          0x00000000001012d9        0x5 arch/i386/crtend.o
- .init          0x00000000001012de        0x2 arch/i386/crtn.o
+.init           0x0000000000101561        0xf
+ .init          0x0000000000101561        0x3 arch/i386/crti.o
+                0x0000000000101561                _init
+ .init          0x0000000000101564        0x5 arch/i386/crtbegin.o
+ .init          0x0000000000101569        0x5 arch/i386/crtend.o
+ .init          0x000000000010156e        0x2 arch/i386/crtn.o
 
-.fini           0x00000000001012e0        0xa
- .fini          0x00000000001012e0        0x3 arch/i386/crti.o
-                0x00000000001012e0                _fini
- .fini          0x00000000001012e3        0x5 arch/i386/crtbegin.o
- .fini          0x00000000001012e8        0x2 arch/i386/crtn.o
+.fini           0x0000000000101570        0xa
+ .fini          0x0000000000101570        0x3 arch/i386/crti.o
+                0x0000000000101570                _fini
+ .fini          0x0000000000101573        0x5 arch/i386/crtbegin.o
+ .fini          0x0000000000101578        0x2 arch/i386/crtn.o
 
-.iplt           0x00000000001012ea        0x0
- .iplt          0x00000000001012ea        0x0 arch/i386/crti.o
+.iplt           0x000000000010157a        0x0
+ .iplt          0x000000000010157a        0x0 arch/i386/crti.o
 
-.rel.dyn        0x00000000001012ec        0x0
- .rel.got       0x00000000001012ec        0x0 arch/i386/crti.o
- .rel.iplt      0x00000000001012ec        0x0 arch/i386/crti.o
- .rel.text      0x00000000001012ec        0x0 arch/i386/crti.o
+.rel.dyn        0x000000000010157c        0x0
+ .rel.got       0x000000000010157c        0x0 arch/i386/crti.o
+ .rel.iplt      0x000000000010157c        0x0 arch/i386/crti.o
+ .rel.text      0x000000000010157c        0x0 arch/i386/crti.o
 
 .rodata
  *(.rodata)
 
-.eh_frame       0x00000000001012ec        0x4
- .eh_frame      0x00000000001012ec        0x0 arch/i386/crtbegin.o
- .eh_frame      0x00000000001012ec        0x4 arch/i386/crtend.o
+.eh_frame       0x000000000010157c        0x4
+ .eh_frame      0x000000000010157c        0x0 arch/i386/crtbegin.o
+ .eh_frame      0x000000000010157c        0x4 arch/i386/crtend.o
 
-.rodata.str1.4  0x00000000001012f0       0x8a
+.rodata.str1.4  0x0000000000101580      0x1ea
  .rodata.str1.4
-                0x00000000001012f0       0x8a arch/i386/interrupt_handler.o
+                0x0000000000101580      0x1ea arch/i386/interrupt_handler.o
 
-.rodata.str1.1  0x000000000010137a       0xa9
+.rodata.str1.1  0x000000000010176a       0xc4
  .rodata.str1.1
-                0x000000000010137a       0x64 arch/i386/interrupt_handler.o
+                0x000000000010176a       0x7f arch/i386/interrupt_handler.o
  .rodata.str1.1
-                0x00000000001013de       0x2d kernel/kernel.o
+                0x00000000001017e9       0x2d kernel/kernel.o
  .rodata.str1.1
-                0x000000000010140b       0x18 /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
+                0x0000000000101816       0x18 /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
 
 .data           0x0000000000102000        0x4
  *(.data)
@@ -163,6 +175,7 @@ LOAD arch/i386/crtn.o
  .data          0x0000000000102004        0x0 arch/i386/pic.o
  .data          0x0000000000102004        0x0 arch/i386/interrupt_handler.o
  .data          0x0000000000102004        0x0 arch/i386/idt.o
+ .data          0x0000000000102004        0x0 arch/i386/gdt.o
  .data          0x0000000000102004        0x0 kernel/kernel.o
  .data          0x0000000000102004        0x0 /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
  .data          0x0000000000102004        0x0 /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
@@ -197,7 +210,7 @@ LOAD arch/i386/crtn.o
  .tm_clone_table
                 0x0000000000102014        0x0 arch/i386/crtend.o
 
-.bss            0x0000000000103000     0x4840
+.bss            0x0000000000103000     0x4868
  *(COMMON)
  *(.bss)
  .bss           0x0000000000103000        0x0 arch/i386/crti.o
@@ -210,49 +223,53 @@ LOAD arch/i386/crtn.o
  *fill*         0x0000000000107030       0x10 
  .bss           0x0000000000107040      0x800 arch/i386/idt.o
                 0x0000000000107040                IDT
- .bss           0x0000000000107840        0x0 kernel/kernel.o
- .bss           0x0000000000107840        0x0 /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
- .bss           0x0000000000107840        0x0 /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
- .bss           0x0000000000107840        0x0 /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
- .bss           0x0000000000107840        0x0 /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
- .bss           0x0000000000107840        0x0 /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
- .bss           0x0000000000107840        0x0 arch/i386/crtend.o
- .bss           0x0000000000107840        0x0 arch/i386/crtn.o
+ .bss           0x0000000000107840       0x28 arch/i386/gdt.o
+                0x0000000000107840                GDT
+ .bss           0x0000000000107868        0x0 kernel/kernel.o
+ .bss           0x0000000000107868        0x0 /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
+ .bss           0x0000000000107868        0x0 /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
+ .bss           0x0000000000107868        0x0 /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
+ .bss           0x0000000000107868        0x0 /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
+ .bss           0x0000000000107868        0x0 /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
+ .bss           0x0000000000107868        0x0 arch/i386/crtend.o
+ .bss           0x0000000000107868        0x0 arch/i386/crtn.o
 OUTPUT(aros.kernel elf32-i386)
 
-.debug_line     0x0000000000000000     0x1a47
+.debug_line     0x0000000000000000     0x1c54
  .debug_line    0x0000000000000000       0x4f arch/i386/crti.o
- .debug_line    0x000000000000004f       0x57 arch/i386/boot.o
- .debug_line    0x00000000000000a6      0x48f arch/i386/tty.o
- .debug_line    0x0000000000000535      0x2f7 arch/i386/serial.o
- .debug_line    0x000000000000082c      0x3fa arch/i386/pic.o
- .debug_line    0x0000000000000c26      0x296 arch/i386/interrupt_handler.o
- .debug_line    0x0000000000000ebc      0x291 arch/i386/idt.o
- .debug_line    0x000000000000114d       0xc4 kernel/kernel.o
- .debug_line    0x0000000000001211      0x491 /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
- .debug_line    0x00000000000016a2       0x9f /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
- .debug_line    0x0000000000001741       0x84 /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
- .debug_line    0x00000000000017c5      0x18e /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
- .debug_line    0x0000000000001953       0xa7 /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
- .debug_line    0x00000000000019fa       0x4d arch/i386/crtn.o
+ .debug_line    0x000000000000004f       0x54 arch/i386/boot.o
+ .debug_line    0x00000000000000a3      0x48f arch/i386/tty.o
+ .debug_line    0x0000000000000532      0x2f7 arch/i386/serial.o
+ .debug_line    0x0000000000000829      0x3fa arch/i386/pic.o
+ .debug_line    0x0000000000000c23      0x2f0 arch/i386/interrupt_handler.o
+ .debug_line    0x0000000000000f13      0x306 arch/i386/idt.o
+ .debug_line    0x0000000000001219      0x168 arch/i386/gdt.o
+ .debug_line    0x0000000000001381       0xc3 kernel/kernel.o
+ .debug_line    0x0000000000001444      0x491 /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
+ .debug_line    0x00000000000018d5       0x9f /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
+ .debug_line    0x0000000000001974       0x5e /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
+ .debug_line    0x00000000000019d2      0x18e /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
+ .debug_line    0x0000000000001b60       0xa7 /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
+ .debug_line    0x0000000000001c07       0x4d arch/i386/crtn.o
 
-.debug_info     0x0000000000000000     0x2701
+.debug_info     0x0000000000000000     0x2a76
  .debug_info    0x0000000000000000       0x22 arch/i386/crti.o
  .debug_info    0x0000000000000022       0x26 arch/i386/boot.o
  .debug_info    0x0000000000000048      0x70a arch/i386/tty.o
  .debug_info    0x0000000000000752      0x4ea arch/i386/serial.o
  .debug_info    0x0000000000000c3c      0x86a arch/i386/pic.o
- .debug_info    0x00000000000014a6      0x587 arch/i386/interrupt_handler.o
- .debug_info    0x0000000000001a2d      0x264 arch/i386/idt.o
- .debug_info    0x0000000000001c91       0xee kernel/kernel.o
- .debug_info    0x0000000000001d7f      0x5ac /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
- .debug_info    0x000000000000232b       0xb7 /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
- .debug_info    0x00000000000023e2       0x52 /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
- .debug_info    0x0000000000002434      0x1fa /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
- .debug_info    0x000000000000262e       0xb1 /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
- .debug_info    0x00000000000026df       0x22 arch/i386/crtn.o
+ .debug_info    0x00000000000014a6      0x719 arch/i386/interrupt_handler.o
+ .debug_info    0x0000000000001bbf      0x2a0 arch/i386/idt.o
+ .debug_info    0x0000000000001e5f      0x1a7 arch/i386/gdt.o
+ .debug_info    0x0000000000002006       0xee kernel/kernel.o
+ .debug_info    0x00000000000020f4      0x5ac /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
+ .debug_info    0x00000000000026a0       0xb7 /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
+ .debug_info    0x0000000000002757       0x52 /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
+ .debug_info    0x00000000000027a9      0x1fa /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
+ .debug_info    0x00000000000029a3       0xb1 /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
+ .debug_info    0x0000000000002a54       0x22 arch/i386/crtn.o
 
-.debug_abbrev   0x0000000000000000      0xd3e
+.debug_abbrev   0x0000000000000000      0xe69
  .debug_abbrev  0x0000000000000000       0x12 arch/i386/crti.o
  .debug_abbrev  0x0000000000000012       0x14 arch/i386/boot.o
  .debug_abbrev  0x0000000000000026      0x21a arch/i386/tty.o
@@ -260,15 +277,16 @@ OUTPUT(aros.kernel elf32-i386)
  .debug_abbrev  0x000000000000041d      0x1d7 arch/i386/pic.o
  .debug_abbrev  0x00000000000005f4      0x164 arch/i386/interrupt_handler.o
  .debug_abbrev  0x0000000000000758       0xe5 arch/i386/idt.o
- .debug_abbrev  0x000000000000083d       0x64 kernel/kernel.o
- .debug_abbrev  0x00000000000008a1      0x1be /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
- .debug_abbrev  0x0000000000000a5f       0x88 /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
- .debug_abbrev  0x0000000000000ae7       0x51 /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
- .debug_abbrev  0x0000000000000b38      0x165 /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
- .debug_abbrev  0x0000000000000c9d       0x8f /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
- .debug_abbrev  0x0000000000000d2c       0x12 arch/i386/crtn.o
+ .debug_abbrev  0x000000000000083d      0x12b arch/i386/gdt.o
+ .debug_abbrev  0x0000000000000968       0x64 kernel/kernel.o
+ .debug_abbrev  0x00000000000009cc      0x1be /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
+ .debug_abbrev  0x0000000000000b8a       0x88 /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
+ .debug_abbrev  0x0000000000000c12       0x51 /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
+ .debug_abbrev  0x0000000000000c63      0x165 /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
+ .debug_abbrev  0x0000000000000dc8       0x8f /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
+ .debug_abbrev  0x0000000000000e57       0x12 arch/i386/crtn.o
 
-.debug_aranges  0x0000000000000000      0x1d0
+.debug_aranges  0x0000000000000000      0x1f0
  .debug_aranges
                 0x0000000000000000       0x28 arch/i386/crti.o
  .debug_aranges
@@ -284,21 +302,23 @@ OUTPUT(aros.kernel elf32-i386)
  .debug_aranges
                 0x00000000000000c8       0x20 arch/i386/idt.o
  .debug_aranges
-                0x00000000000000e8       0x20 kernel/kernel.o
+                0x00000000000000e8       0x20 arch/i386/gdt.o
  .debug_aranges
-                0x0000000000000108       0x20 /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
+                0x0000000000000108       0x20 kernel/kernel.o
  .debug_aranges
-                0x0000000000000128       0x20 /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
+                0x0000000000000128       0x20 /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
  .debug_aranges
-                0x0000000000000148       0x20 /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
+                0x0000000000000148       0x20 /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
  .debug_aranges
-                0x0000000000000168       0x20 /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
+                0x0000000000000168       0x20 /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
  .debug_aranges
-                0x0000000000000188       0x20 /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
+                0x0000000000000188       0x20 /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
  .debug_aranges
-                0x00000000000001a8       0x28 arch/i386/crtn.o
+                0x00000000000001a8       0x20 /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
+ .debug_aranges
+                0x00000000000001c8       0x28 arch/i386/crtn.o
 
-.debug_str      0x0000000000000000      0x8e1
+.debug_str      0x0000000000000000      0xa24
  .debug_str     0x0000000000000000       0x38 arch/i386/crti.o
  .debug_str     0x0000000000000038       0x11 arch/i386/boot.o
                                          0x38 (size before relaxing)
@@ -308,23 +328,25 @@ OUTPUT(aros.kernel elf32-i386)
                                         0x18d (size before relaxing)
  .debug_str     0x00000000000003e6       0x97 arch/i386/pic.o
                                         0x1b4 (size before relaxing)
- .debug_str     0x000000000000047d      0x162 arch/i386/interrupt_handler.o
-                                        0x298 (size before relaxing)
- .debug_str     0x00000000000005df      0x177 arch/i386/idt.o
-                                        0x29f (size before relaxing)
- .debug_str     0x0000000000000756       0x1c kernel/kernel.o
+ .debug_str     0x000000000000047d      0x1e7 arch/i386/interrupt_handler.o
+                                        0x31d (size before relaxing)
+ .debug_str     0x0000000000000664      0x1d9 arch/i386/idt.o
+                                        0x301 (size before relaxing)
+ .debug_str     0x000000000000083d       0x61 arch/i386/gdt.o
+                                        0x180 (size before relaxing)
+ .debug_str     0x000000000000089e       0x1c kernel/kernel.o
                                         0x164 (size before relaxing)
- .debug_str     0x0000000000000772       0xf5 /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
+ .debug_str     0x00000000000008ba       0xf5 /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
                                         0x17e (size before relaxing)
- .debug_str     0x0000000000000867       0x10 /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
+ .debug_str     0x00000000000009af       0x10 /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
                                          0xe0 (size before relaxing)
- .debug_str     0x0000000000000877        0xf /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
+ .debug_str     0x00000000000009bf        0xf /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
                                          0x84 (size before relaxing)
- .debug_str     0x0000000000000886       0x3a /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
+ .debug_str     0x00000000000009ce       0x35 /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
                                          0xc6 (size before relaxing)
- .debug_str     0x00000000000008c0       0x10 /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
+ .debug_str     0x0000000000000a03       0x10 /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
                                          0xca (size before relaxing)
- .debug_str     0x00000000000008d0       0x11 arch/i386/crtn.o
+ .debug_str     0x0000000000000a13       0x11 arch/i386/crtn.o
                                          0x38 (size before relaxing)
 
 .debug_ranges   0x0000000000000000      0x4f8
@@ -345,6 +367,7 @@ OUTPUT(aros.kernel elf32-i386)
  .comment       0x0000000000000012       0x13 arch/i386/pic.o
  .comment       0x0000000000000012       0x13 arch/i386/interrupt_handler.o
  .comment       0x0000000000000012       0x13 arch/i386/idt.o
+ .comment       0x0000000000000012       0x13 arch/i386/gdt.o
  .comment       0x0000000000000012       0x13 kernel/kernel.o
  .comment       0x0000000000000012       0x13 /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
  .comment       0x0000000000000012       0x13 /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
@@ -353,24 +376,26 @@ OUTPUT(aros.kernel elf32-i386)
  .comment       0x0000000000000012       0x13 /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
  .comment       0x0000000000000012       0x13 arch/i386/crtend.o
 
-.debug_loc      0x0000000000000000     0x1afc
+.debug_loc      0x0000000000000000     0x1cc0
  .debug_loc     0x0000000000000000      0x5be arch/i386/tty.o
  .debug_loc     0x00000000000005be      0x2cf arch/i386/serial.o
  .debug_loc     0x000000000000088d      0x5ee arch/i386/pic.o
- .debug_loc     0x0000000000000e7b      0x29f arch/i386/interrupt_handler.o
- .debug_loc     0x000000000000111a      0x65d /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
- .debug_loc     0x0000000000001777      0x33f /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
- .debug_loc     0x0000000000001ab6       0x46 /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
+ .debug_loc     0x0000000000000e7b      0x326 arch/i386/interrupt_handler.o
+ .debug_loc     0x00000000000011a1      0x13d arch/i386/gdt.o
+ .debug_loc     0x00000000000012de      0x65d /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
+ .debug_loc     0x000000000000193b      0x33f /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
+ .debug_loc     0x0000000000001c7a       0x46 /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
 
-.debug_frame    0x0000000000000000      0x780
+.debug_frame    0x0000000000000000      0x884
  .debug_frame   0x0000000000000000      0x120 arch/i386/tty.o
  .debug_frame   0x0000000000000120       0xbc arch/i386/serial.o
  .debug_frame   0x00000000000001dc       0xc4 arch/i386/pic.o
- .debug_frame   0x00000000000002a0      0x32c arch/i386/interrupt_handler.o
- .debug_frame   0x00000000000005cc       0x34 arch/i386/idt.o
- .debug_frame   0x0000000000000600       0x2c kernel/kernel.o
- .debug_frame   0x000000000000062c       0x44 /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
- .debug_frame   0x0000000000000670       0x38 /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
- .debug_frame   0x00000000000006a8       0x2c /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
- .debug_frame   0x00000000000006d4       0x78 /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
- .debug_frame   0x000000000000074c       0x34 /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)
+ .debug_frame   0x00000000000002a0      0x3d8 arch/i386/interrupt_handler.o
+ .debug_frame   0x0000000000000678       0x34 arch/i386/idt.o
+ .debug_frame   0x00000000000006ac       0x58 arch/i386/gdt.o
+ .debug_frame   0x0000000000000704       0x2c kernel/kernel.o
+ .debug_frame   0x0000000000000730       0x44 /home/ubuntu/aros/sysroot/usr/lib/libk.a(printf.libk.o)
+ .debug_frame   0x0000000000000774       0x38 /home/ubuntu/aros/sysroot/usr/lib/libk.a(putchar.libk.o)
+ .debug_frame   0x00000000000007ac       0x2c /home/ubuntu/aros/sysroot/usr/lib/libk.a(abort.libk.o)
+ .debug_frame   0x00000000000007d8       0x78 /home/ubuntu/aros/sysroot/usr/lib/libk.a(itoa.libk.o)
+ .debug_frame   0x0000000000000850       0x34 /home/ubuntu/aros/sysroot/usr/lib/libk.a(strlen.libk.o)

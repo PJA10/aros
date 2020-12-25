@@ -25,52 +25,7 @@ stack_top:
 .type _start, @function
 _start:
 
-	 #global descriptor table
-	jmp load_gdt
-gdt:
-
-gdt_null:
-	.quad 0
-
-gdt_code:
-	.word 0xFFFF
-	.word 0
-
-	.byte 0
-	.byte 0b10011010
-	.byte 0b11001111
-	.byte 0
-
-gdt_data:
-	.word 0xFFFF
-	.word 0
-
-	.byte 0
-	.byte 0b10010010
-	.byte 0b11001111
-	.byte 0
-
-gdt_end:
-
-gdt_desc:
-	.word gdt_end - gdt - 1
-	.4byte gdt
-
-#load gdt
-load_gdt:
-	cli  #disable interrupts
-	lgdt (gdt_desc)  #load GDT
-	sti  #enable interrupts
-
-	# reload segments
-	jmp $0x08, $fix_cs
-fix_cs:
-	movl $0x10, %eax
-	movl %eax, %ds
-	movl %eax, %es
-	movl %eax, %fs
-	movl %eax, %gs
-	movl %eax, %ss
+	call gdt_init
 
 	movl $stack_top, %esp
 
@@ -84,6 +39,7 @@ fix_cs:
 	cli
 1:	hlt
 	jmp 1b
+
 .size _start, . - _start
 
 .global load_idt
@@ -91,6 +47,21 @@ load_idt:
 	movl 4(%esp), %edx
 	lidt (%edx)
 	sti
+	ret
+
+.global load_gdt
+load_gdt:
+	movl 4(%esp), %edx
+	lgdt (%edx)
+	# reload segments
+	jmp $0x08, $fix_cs
+fix_cs:
+	movl $0x10, %eax
+	movl %eax, %ds
+	movl %eax, %es
+	movl %eax, %fs
+	movl %eax, %gs
+	movl %eax, %ss
 	ret
 
 
