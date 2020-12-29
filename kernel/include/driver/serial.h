@@ -1,5 +1,5 @@
-#ifndef _KERNEL_SERIAL_H
-#define _KERNEL_SERIAL_H
+#ifndef _DRIVER_SERIAL_H
+#define _DRIVER_SERIAL_H
 
 void init_serial();
 char read_serial();

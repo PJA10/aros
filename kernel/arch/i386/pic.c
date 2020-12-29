@@ -1,6 +1,6 @@
 #include <sys/io.h>
 
-#include <kernel/pic.h>
+#include <arch-i386/pic.h>
 
 #include "pic_consts.h"
 

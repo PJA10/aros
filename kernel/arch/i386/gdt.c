@@ -1,7 +1,7 @@
 // Used for creating GDT segment descriptors in 64-bit integer form.
 #include <stdio.h>
 #include <stdint.h>
-#include "gdt.h"
+#include "gdt_entry.h"
 
 // TODO: (can be changed) use a global var of a new struct type to send the gdt ptr to load_gdt insted of the stack(which mabye isn't proporly seted up) - http://www.osdever.net/bkerndev/Docs/gdt.htm
 // TODO: Is the GDT still missing a TSS selector

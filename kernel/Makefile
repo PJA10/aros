@@ -19,8 +19,10 @@ LDFLAGS:=$(LDFLAGS)
 LIBS:=$(LIBS) -nostdlib -lk -lgcc
 
 ARCHDIR=arch/$(HOSTARCH)
+DRIVERDIR=driver
 
 include $(ARCHDIR)/make.config
+include $(DRIVERDIR)/make.config
 
 CFLAGS:=$(CFLAGS) $(KERNEL_ARCH_CFLAGS)
 CPPFLAGS:=$(CPPFLAGS) $(KERNEL_ARCH_CPPFLAGS)
@@ -29,7 +31,10 @@ LIBS:=$(LIBS) $(KERNEL_ARCH_LIBS)
 
 KERNEL_OBJS=\
 $(KERNEL_ARCH_OBJS) \
+$(KERNEL_DRIVER_OBJS) \
 kernel/kernel.o \
+
+$(info    KERNEL_OBJS is $(KERNEL_OBJS))
 
 OBJS=\
 $(ARCHDIR)/crti.o \
@@ -69,6 +74,7 @@ clean:
 	rm -f aros.kernel
 	rm -f $(OBJS) *.o */*.o */*/*.o
 	rm -f $(OBJS:.o=.d) *.d */*.d */*/*.d
+	rm -f aros.map
 
 install: install-headers install-kernel
 

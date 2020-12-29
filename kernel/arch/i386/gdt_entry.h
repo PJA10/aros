@@ -1,5 +1,5 @@
-#ifndef ARCH_I386_GDT_H
-#define ARCH_I386_GDT_H
+#ifndef ARCH_I386_GDT_ENTRY_H
+#define ARCH_I386_GDT_ENTRY_H
 
 // Each define here is for a specific flag in the descriptor.
 // Refer to the intel documentation for a description of what each one does.

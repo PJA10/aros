@@ -25,17 +25,15 @@ stack_top:
 .type _start, @function
 _start:
 
-	call gdt_init
-
 	movl $stack_top, %esp
 
 	# Call the global constructors.
 	call _init
 
 	# Transfer control to the main kernel.
-	call kernel_main
+	call kernel_init
 
-	# Hang if kernel_main unexpectedly returns.
+	# Hang if kernel_init unexpectedly returns.
 	cli
 1:	hlt
 	jmp 1b

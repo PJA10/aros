@@ -1,12 +1,19 @@
 #include <stdio.h>
 
-#include <kernel/tty.h>
-#include <kernel/serial.h>
-#include <kernel/idt.h>
-#include <kernel/pic.h>
+#include <driver/tty.h>
+#include <driver/serial.h>
 
 /*
- * TODO:
+ * TODO: fix the fact that array out of range doesn't get caught
+ * Code Structuring + Hardware Abstraction + Portability
+ * simple paging
+ * higher half kernel
+ * Memory Managment - Physical Memory Allocators & Virtual Memory Management
+ * Heap
+ * Stack Smash Protector
+ * Testing and Unit Testing
+ * Running the os on real hardware
+ * Device Management
  *
  */
 
@@ -14,10 +21,7 @@
 void kernel_main(void) {
 	terminal_initialize();
 	init_serial();
-	idt_init();
-	printf("idt_init finished\n");
-	asm("UD2");
-	printf("kernel finished - hlting\n");
+	printf("kernel main finished, hlting\n");
 	for(;;) {
 		asm("hlt");
 	}
