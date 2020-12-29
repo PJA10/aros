@@ -1,4 +1,4 @@
 *.d
 *.kernel
 *.o
-./aros.map
+aros.map
