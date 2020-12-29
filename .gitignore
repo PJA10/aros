@@ -2,3 +2,5 @@
 isodir
 sysroot
 *.o
+kernel/aros.map
+debug-logs.txt
