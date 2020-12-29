@@ -1,5 +1,4 @@
 *.iso
 isodir
 sysroot
-kernel/aros.map
-debug-logs.txt
+./debug-logs.txt
