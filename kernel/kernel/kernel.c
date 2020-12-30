@@ -5,7 +5,6 @@
 
 /*
  * TODO: fix the fact that array out of range doesn't get caught
- * simple paging
  * higher half kernel
  * Memory Managment - Physical Memory Allocators & Virtual Memory Management
  * Heap
