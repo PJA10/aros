@@ -16,6 +16,7 @@ __attribute__((interrupt)) void invalid_opcode_handler(struct interrupt_frame* f
 __attribute__((interrupt)) void invalid_TSS_handler(struct interrupt_frame* frame, int error_code);
 __attribute__((interrupt)) void stack_segment_fault_handler(struct interrupt_frame* frame, int error_code);
 __attribute__((interrupt)) void general_protection_fault_handler(struct interrupt_frame* frame, int error_code);
+__attribute__((interrupt)) void page_fault_handler(struct interrupt_frame* frame, int error_code);
 __attribute__((interrupt)) void irq0_handler(struct interrupt_frame* frame);
 __attribute__((interrupt)) void irq1_handler(struct interrupt_frame* frame);
 __attribute__((interrupt)) void irq2_handler(struct interrupt_frame* frame);

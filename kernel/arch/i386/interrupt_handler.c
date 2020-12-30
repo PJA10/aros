@@ -56,6 +56,13 @@ __attribute__((interrupt)) void general_protection_fault_handler(struct interrup
 	abort();
 }
 
+__attribute__((interrupt)) void page_fault_handler(struct interrupt_frame* frame, int error_code)
+{
+	printf("page fault\n");
+	printf("IP: %x, CS: %x, EFLAGS: %x, error_code: %x\n", frame->EIP, frame->CS, frame->EFLAGS, error_code);
+	abort();
+}
+
 __attribute__((interrupt)) void irq0_handler(struct interrupt_frame* frame)
 {
 	PIC_sendEOI((unsigned char)0);

@@ -80,13 +80,19 @@ void idt_init(void) {
 	IDT[12].type_attr = 0x8f; /* TRAP_GATE */
 	IDT[12].offset_higherbits = (exception12_address & 0xffff0000) >> 16;
 
-
 	unsigned long exception13_address = (unsigned long)general_protection_fault_handler;
-	IDT[12].offset_lowerbits = exception13_address & 0xffff;
-	IDT[12].selector = 0x08; /* KERNEL_CODE_SEGMENT_OFFSET */
-	IDT[12].zero = 0;
-	IDT[12].type_attr = 0x8f; /* TRAP_GATE */
-	IDT[12].offset_higherbits = (exception13_address & 0xffff0000) >> 16;
+	IDT[13].offset_lowerbits = exception13_address & 0xffff;
+	IDT[13].selector = 0x08; /* KERNEL_CODE_SEGMENT_OFFSET */
+	IDT[13].zero = 0;
+	IDT[13].type_attr = 0x8f; /* TRAP_GATE */
+	IDT[13].offset_higherbits = (exception13_address & 0xffff0000) >> 16;
+
+	unsigned long exception14_address = (unsigned long)page_fault_handler;
+	IDT[14].offset_lowerbits = exception14_address & 0xffff;
+	IDT[14].selector = 0x08; /* KERNEL_CODE_SEGMENT_OFFSET */
+	IDT[14].zero = 0;
+	IDT[14].type_attr = 0x8f; /* TRAP_GATE */
+	IDT[14].offset_higherbits = (exception14_address & 0xffff0000) >> 16;
 
 	irq0_address = (unsigned long)irq0_handler;
 	IDT[32].offset_lowerbits = irq0_address & 0xffff;

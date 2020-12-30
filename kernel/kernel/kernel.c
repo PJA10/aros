@@ -21,6 +21,8 @@
 void kernel_main(void) {
 	terminal_initialize();
 	init_serial();
+	printf("kernel main start\n");
+
 	printf("kernel main finished, hlting\n");
 	for(;;) {
 		asm("hlt");
