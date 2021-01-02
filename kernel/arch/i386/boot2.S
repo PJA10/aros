@@ -1,3 +1,17 @@
+# Declare constants for the multiboot header.
+.set ALIGN,    1<<0             # align loaded modules on page boundaries
+.set MEMINFO,  1<<1             # provide memory map
+.set FLAGS,    ALIGN | MEMINFO  # this is the Multiboot 'flag' field
+.set MAGIC,    0x1BADB002       # 'magic number' lets bootloader find the header
+.set CHECKSUM, -(MAGIC + FLAGS) # checksum of above, to prove we are multiboot
+
+# Declare a multiboot header that marks the program as a kernel.
+.section .multiboot.data
+.align 4
+.long MAGIC
+.long FLAGS
+.long CHECKSUM
+
 # Allocate the initial stack.
 .section .bootstrap_stack, "aw", @nobits
 stack_bottom:
@@ -25,6 +39,7 @@ _start:
 	#       conversions to and from physical. Maybe this should be done in this
 	#       code as well?
 	movl $(boot_page_table1 - 0xC0000000), %edi
+
 	# First address to map is address 0.
 	# TODO: Start at the first kernel page instead. Alternatively map the first
 	#       1 MiB as it can be generally useful, and there's no need to
@@ -78,16 +93,16 @@ _start:
 	orl $0x80010000, %ecx
 	movl %ecx, %cr0
 
-	# Jump to higher half with an absolute jump. 
+	# Jump to higher half with an absolute jump.
 	lea 4f, %ecx
 	jmp *%ecx
 
-.section .text
 
+.section .text
 4:
 	# At this point, paging is fully set up and enabled.
 
-	# Unmap the identity mapping as it is now unnecessary. 
+	# Unmap the identity mapping as it is now unnecessary.
 	movl $0, boot_page_directory + 0
 
 	# Reload crc3 to force a TLB flush so the changes to take effect.
@@ -95,12 +110,60 @@ _start:
 	movl %ecx, %cr3
 
 	# Set up the stack.
-	mov $stack_top, %esp
+	movl $stack_top, %esp
 
-	# Enter the high-level kernel.
-	call kernel_main
+	# Call the global constructors.
+	call _init
 
-	# Infinite loop if the system has nothing more to do.
+	# Enter kernel_init
+	call kernel_init
+
+	# Hang if kernel_init unexpectedly returns.
 	cli
 1:	hlt
 	jmp 1b
+
+.global load_idt
+load_idt:
+	movl 4(%esp), %edx
+	lidt (%edx)
+	sti
+	ret
+
+.global load_gdt
+load_gdt:
+	movl 4(%esp), %edx
+	lgdt (%edx)
+	# reload segments
+	jmp $0x08, $fix_cs
+fix_cs:
+	movl $0x10, %eax
+	movl %eax, %ds
+	movl %eax, %es
+	movl %eax, %fs
+	movl %eax, %gs
+	movl %eax, %ss
+	ret
+
+.globl loadPageDirectory
+loadPageDirectory:
+	push %ebp
+	mov %esp, %ebp
+	mov 8(%esp), %eax
+	mov %eax, %cr3
+	mov %ebp, %esp
+	pop %ebp
+	ret
+
+.global enablePaging
+enablePaging:
+	push %ebp
+	mov %esp, %ebp
+	mov %cr0, %eax
+	or $0x80000000, %eax
+	mov %eax, %cr0
+	mov %ebp, %esp
+	pop %ebp
+	ret
+
+
