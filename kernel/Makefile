@@ -34,7 +34,7 @@ $(KERNEL_ARCH_OBJS) \
 $(KERNEL_DRIVER_OBJS) \
 kernel/kernel.o \
 
-$(info    KERNEL_OBJS is $(KERNEL_OBJS))
+# $(info    KERNEL_OBJS is $(KERNEL_OBJS)) # print KERNEL_OBJS
 
 OBJS=\
 $(ARCHDIR)/crti.o \
@@ -58,7 +58,7 @@ $(ARCHDIR)/crtn.o \
 all: aros.kernel
 
 aros.kernel: $(OBJS) $(ARCHDIR)/linker.ld
-	$(CC) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS) $(LINK_LIST)
+	$(CC) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS)  -z max-page-size=4096 $(LINK_LIST)
 	grub-file --is-x86-multiboot aros.kernel
 
 $(ARCHDIR)/crtbegin.o $(ARCHDIR)/crtend.o:

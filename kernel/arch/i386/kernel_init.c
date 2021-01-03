@@ -5,7 +5,7 @@
 
 void kernel_init() {
 	extern int kernel_main();
-	paging_init();
+	//paging_init();
 	gdt_init();
 	idt_init();
 	kernel_main();
