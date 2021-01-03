@@ -4,6 +4,7 @@
 .set FLAGS,    ALIGN | MEMINFO  # this is the Multiboot 'flag' field
 .set MAGIC,    0x1BADB002       # 'magic number' lets bootloader find the header
 .set CHECKSUM, -(MAGIC + FLAGS) # checksum of above, to prove we are multiboot
+.set KERNEL_VIRTUAL_BASE, 0xC0000000 # 3GB
 
 # Declare a multiboot header that marks the program as a kernel.
 .section .multiboot.data
@@ -38,12 +39,11 @@ _start:
 	# TODO: I recall seeing some assembly that used a macro to do the
 	#       conversions to and from physical. Maybe this should be done in this
 	#       code as well?
-	movl $(boot_page_table1 - 0xC0000000), %edi
+	movl $(boot_page_table1 - KERNEL_VIRTUAL_BASE), %edi
 
 	# First address to map is address 0.
 	movl $0, %esi
-	# Map 1024 pages. We map the first 1 MiB as it can be generally useful,
-	# and there's no need to specially map the VGA buffer.
+	# Map 1024 pages.
 	movl $1024, %ecx
 
 1:
@@ -63,9 +63,9 @@ _start:
 	loop 1b
 
 
-	# Map the page table to both virtual addresses 0x00000000 and 0xC0000000.
-	movl $(boot_page_table1 - 0xC0000000 + 0x003), boot_page_directory - 0xC0000000 + 0
-	movl $(boot_page_table1 - 0xC0000000 + 0x003), boot_page_directory - 0xC0000000 + 768 * 4
+	# Map the page table to both virtual addresses 0x00000000 and (KERNEL_VIRTUAL_BASE)0xC0000000.
+	movl $(boot_page_table1 - KERNEL_VIRTUAL_BASE + 0x003), boot_page_directory - KERNEL_VIRTUAL_BASE + 0
+	movl $(boot_page_table1 - KERNEL_VIRTUAL_BASE + 0x003), boot_page_directory - KERNEL_VIRTUAL_BASE + 768 * 4
 
 	# Set cr3 to the address of the boot_page_directory.
 	movl $(boot_page_directory - 0xC0000000), %ecx
@@ -77,12 +77,12 @@ _start:
 	movl %ecx, %cr0
 
 	# Jump to higher half with an absolute jump.
-	lea 4f, %ecx
+	lea start_in_high_half, %ecx
 	jmp *%ecx
 
 
 .section .text
-4:
+start_in_high_half:
 	# At this point, paging is fully set up and enabled.
 
 	# Unmap the identity mapping as it is now unnecessary.
