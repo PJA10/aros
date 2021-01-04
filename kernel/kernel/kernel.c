@@ -13,6 +13,8 @@
  * Running the os on real hardware
  * Device Management
  * Hardware Abstraction
+ * arch independent isr
+ * interrupt driven io / io using DMA
  *
  * keep in mind Code Structuring + Portability
  */
