@@ -99,6 +99,10 @@ start_in_high_half:
 	# Set up the stack.
 	movl $stack_top, %esp
 
+	# push multiboot info, will be poped in kernel_init
+	push %eax
+	push %ebx
+
 	# Call the global constructors.
 	call _init
 

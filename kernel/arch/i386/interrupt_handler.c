@@ -60,6 +60,19 @@ __attribute__((interrupt)) void page_fault_handler(struct interrupt_frame* frame
 {
 	printf("page fault\n");
 	printf("IP: %x, CS: %x, EFLAGS: %x, error_code: %x\n", frame->EIP, frame->CS, frame->EFLAGS, error_code);
+	unsigned int cr0, cr2, cr3;
+	__asm__ __volatile__ (
+        "mov %%cr0, %%eax\n\t"
+        "mov %%eax, %0\n\t"
+        "mov %%cr2, %%eax\n\t"
+        "mov %%eax, %1\n\t"
+        "mov %%cr3, %%eax\n\t"
+        "mov %%eax, %2\n\t"
+	: "=m" (cr0), "=m" (cr2), "=m" (cr3)
+	: /* no input */
+	: "%eax"
+	);
+	printf("CR0: 0x%x, CR2: 0x%x, CR3: 0x%x\n", cr0, cr2, cr3);
 	abort();
 }
 
