@@ -49,8 +49,6 @@ _start:
 1:
 
 	# Map physical address as "present, writable". Note that this maps
-	# .text and .rodata as writable.
-	# TODO: Mind security and map them as non-writable.
 	movl %esi, %edx
 	orl $0x003, %edx
 	cmpl $(_read_only_start - KERNEL_VIRTUAL_BASE - 4095), %esi
