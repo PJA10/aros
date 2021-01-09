@@ -5,7 +5,6 @@
 
 /*
  * TODO: fix the fact that array out of range doesn't get caught
- * higher half kernel
  * Memory Managment - Physical Memory Allocators & Virtual Memory Management
  * Heap
  * Stack Smash Protector
@@ -15,6 +14,8 @@
  * Hardware Abstraction
  * arch independent isr
  * interrupt driven io / io using DMA
+ * higher half kernel - permissions
+ * Timers - maybe PIT first?
  *
  * keep in mind Code Structuring + Portability
  */

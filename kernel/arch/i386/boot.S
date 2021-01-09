@@ -53,6 +53,12 @@ _start:
 	# TODO: Mind security and map them as non-writable.
 	movl %esi, %edx
 	orl $0x003, %edx
+	cmpl $(_read_only_start - KERNEL_VIRTUAL_BASE - 4095), %esi
+	jl 2f # before readonly section
+	cmpl $(_read_only_end - KERNEL_VIRTUAL_BASE), %esi
+	jge 2f # after readonly section
+	andl $0xFFFFFFFD, %edx # clear bit 2 - Right bit
+2:
 	movl %edx, (%edi)
 
 	# Size of page is 4096 bytes.
