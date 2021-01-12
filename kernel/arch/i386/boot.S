@@ -4,6 +4,7 @@
 .set FLAGS,    ALIGN | MEMINFO  # this is the Multiboot 'flag' field
 .set MAGIC,    0x1BADB002       # 'magic number' lets bootloader find the header
 .set CHECKSUM, -(MAGIC + FLAGS) # checksum of above, to prove we are multiboot
+.global KERNEL_VIRTUAL_BASE
 .set KERNEL_VIRTUAL_BASE, 0xC0000000 # 3GB
 
 # Declare a multiboot header that marks the program as a kernel.

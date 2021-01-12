@@ -33,6 +33,7 @@ KERNEL_OBJS=\
 $(KERNEL_ARCH_OBJS) \
 $(KERNEL_DRIVER_OBJS) \
 kernel/kernel.o \
+kernel/mm.o\
 
 # $(info    KERNEL_OBJS is $(KERNEL_OBJS)) # print KERNEL_OBJS
 
