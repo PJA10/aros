@@ -17,12 +17,18 @@ void get_memory_map(multiboot_info_t* mbd, unsigned int magic) {
         if (mbd->flags & (1 << 6)) { // bit 6 indicates if there is a BIOS memory map provided at mmap_addr
 		mbd->mmap_addr = mbd->mmap_addr + KERNEL_VIRTUAL_BASE;
                 mmap_entry_t* entry = (mmap_entry_t*) mbd->mmap_addr;
-
+		/*
+		mmap_entry_t* second_entry = get_next_mmap_entry(entry);
+		mmap_entry_t* thired_entry = get_next_mmap_entry(second_entry);
+		second_entry->length_low += 0x50400;
+		thired_entry->type = 1;
+		swap_mmap_entries(entry, thired_entry);
+		swap_mmap_entries(entry, second_entry);
+		print_mmap(entry, mbd->mmap_addr, mbd->mmap_length); */
 		mmap_clear_unrecognised(entry, mbd->mmap_addr, mbd->mmap_length);
 		sort_mmap(entry, mbd->mmap_addr, mbd->mmap_length);
 		handle_mmap_entries_overlap(entry, mbd->mmap_addr, mbd->mmap_length);
-		mbd->mmap_length = combine_mmap_entries(entry, mbd->mmap_addr, mbd->mmap_length);
-
+		mbd->length = combine_mmap_entries(entry, mbd->mmap_addr, mbd->mmap_length);
 		print_mmap(entry, mbd->mmap_addr, mbd->mmap_length);
         }
 }
@@ -36,12 +42,10 @@ void get_memory_map(multiboot_info_t* mbd, unsigned int magic) {
  * @param entry  - the head entry of the *sorted(!)* memory map (without overlapping entries)
  *
  */
-unsigned int combine_mmap_entries(mmap_entry_t* entry, unsigned int mmap_addr, unsigned int mmap_length) {
+unsigned int handle_mmap_entries_overlap(mmap_entry_t* entry, unsigned int mmap_addr, unsigned int mmap_length) {
 	mmap_entry_t* next = get_next_mmap_entry(entry);
 	while((unsigned int) next < mmap_addr + mmap_length) {
 		if (entry-> type != next->type) {
-			entry = get_next_mmap_entry(entry);
-			next = get_next_mmap_entry(entry);
 			continue;
 		}
 		uint64_t entry_base_addr = ((uint64_t) entry->base_addr_high << 32) | entry->base_addr_low;
@@ -49,28 +53,15 @@ unsigned int combine_mmap_entries(mmap_entry_t* entry, unsigned int mmap_addr, u
                 uint64_t next_base_addr = ((uint64_t) next->base_addr_high << 32) | next->base_addr_low;
                 uint64_t next_length = ((uint64_t) next->length_high << 32) | next->length_low;
 		if (entry_base_addr + entry_length != next_base_addr) {
-			entry = get_next_mmap_entry(entry);
-			next = get_next_mmap_entry(entry);
 			continue;
 		}
 		entry_length += next_length;
 		next_base_addr += next_length;
 		next_length = 0;
-
-		update_mmap_enrty(entry, entry_base_addr, entry_length);
-		update_mmap_enrty(next, next_base_addr, next_length);
-
-		// swap the deleted entry until the end
-		// then reduce the deleted entry size from the memory map length
 		mmap_entry_t* until_end = get_next_mmap_entry(next);
-		while((unsigned int) until_end < mmap_addr + mmap_length) {
-			swap_mmap_entries(next, until_end);
-			next = get_next_mmap_entry(next);
-			until_end = get_next_mmap_entry(next);
+		while((unsigned int) next < mmap_addr + mmap_length) {
+			kaad
 		}
-		mmap_length -= next->size + sizeof(next->size);
-		entry = get_next_mmap_entry(entry);
-		next = get_next_mmap_entry(entry);
 	}
 	return mmap_length;
 }
@@ -114,22 +105,22 @@ void handle_mmap_entries_overlap(mmap_entry_t* entry, unsigned int mmap_addr, un
 			else {
 				next_length -= overlap_size;
 			}
-			update_mmap_enrty(entry, entry_base_addr, entry_length);
-			update_mmap_enrty(next, next_base_addr, next_length);
+			// update entry
+			entry->base_addr_high = (uint32_t) (entry_base_addr >> 32);
+			entry->base_addr_low = (uint32_t) entry_base_addr - ((uint64_t)entry->base_addr_high << 32);
+			entry->length_high = (uint32_t) (entry_length >> 32);
+			entry->length_low = (uint32_t) entry_length - ((uint64_t)entry->length_high << 32);
+
+			// update next
+			next->base_addr_high = (uint32_t) (next_base_addr >> 32);
+			next->base_addr_low = (uint32_t) next_base_addr - ((uint64_t)next->base_addr_high << 32);
+			next->length_high = (uint32_t) (next_length >> 32);
+			next->length_low = (uint32_t) next_length - ((uint64_t)next->length_high << 32);
 		}
 		entry = get_next_mmap_entry(entry);
 		next = get_next_mmap_entry(next);
 	}
 }
-
-
-void update_mmap_enrty(mmap_entry_t* entry, uint64_t base_addr, uint64_t length){
-	entry->base_addr_high = (uint32_t) (base_addr >> 32);
-	entry->base_addr_low = (uint32_t) base_addr - ((uint64_t)entry->base_addr_high << 32);
-	entry->length_high = (uint32_t) (length >> 32);
-	entry->length_low = (uint32_t) length - ((uint64_t)entry->length_high << 32);
-}
-
 
 /*
  *
