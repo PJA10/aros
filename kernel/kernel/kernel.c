@@ -26,7 +26,7 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
 	terminal_initialize();
 	init_serial();
 	printf("kernel main start\n");
-	get_memory_map(mbd, magic);
+	mm_init(mbd, magic);
 	printf("kernel main finished, hlting\n");
 	for(;;) {
 		asm("hlt");

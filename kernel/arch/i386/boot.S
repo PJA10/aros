@@ -4,8 +4,8 @@
 .set FLAGS,    ALIGN | MEMINFO  # this is the Multiboot 'flag' field
 .set MAGIC,    0x1BADB002       # 'magic number' lets bootloader find the header
 .set CHECKSUM, -(MAGIC + FLAGS) # checksum of above, to prove we are multiboot
-.global KERNEL_VIRTUAL_BASE
-.set KERNEL_VIRTUAL_BASE, 0xC0000000 # 3GB
+.global _KERNEL_VIRTUAL_BASE
+.set _KERNEL_VIRTUAL_BASE, 0xC0000000 # 3GB
 
 # Declare a multiboot header that marks the program as a kernel.
 .section .multiboot.data
@@ -40,7 +40,7 @@ _start:
 	# TODO: I recall seeing some assembly that used a macro to do the
 	#       conversions to and from physical. Maybe this should be done in this
 	#       code as well?
-	movl $(boot_page_table1 - KERNEL_VIRTUAL_BASE), %edi
+	movl $(boot_page_table1 - _KERNEL_VIRTUAL_BASE), %edi
 
 	# First address to map is address 0.
 	movl $0, %esi
@@ -49,14 +49,15 @@ _start:
 
 1:
 
-	# Map physical address as "present, writable". Note that this maps
+	# Map physical address as "present" and "write" for none .bss sections
 	movl %esi, %edx
 	orl $0x003, %edx
-	cmpl $(_read_only_start - KERNEL_VIRTUAL_BASE - 4095), %esi
+	cmpl $(_read_only_start - _KERNEL_VIRTUAL_BASE - 4095), %esi
 	jl 2f # before readonly section
-	cmpl $(_read_only_end - KERNEL_VIRTUAL_BASE), %esi
+
+	cmpl $(_read_only_end - _KERNEL_VIRTUAL_BASE), %esi
 	jge 2f # after readonly section
-	andl $0xFFFFFFFD, %edx # clear bit 2 - Right bit
+	andl $0xFFFFFFFD, %edx # clear bit 2 - write bit
 2:
 	movl %edx, (%edi)
 
@@ -68,9 +69,9 @@ _start:
 	loop 1b
 
 
-	# Map the page table to both virtual addresses 0x00000000 and (KERNEL_VIRTUAL_BASE)0xC0000000.
-	movl $(boot_page_table1 - KERNEL_VIRTUAL_BASE + 0x003), boot_page_directory - KERNEL_VIRTUAL_BASE + 0
-	movl $(boot_page_table1 - KERNEL_VIRTUAL_BASE + 0x003), boot_page_directory - KERNEL_VIRTUAL_BASE + 768 * 4
+	# Map the page table to both virtual addresses 0x00000000 and (_KERNEL_VIRTUAL_BASE)0xC0000000.
+	movl $(boot_page_table1 - _KERNEL_VIRTUAL_BASE + 0x003), boot_page_directory - _KERNEL_VIRTUAL_BASE + 0
+	movl $(boot_page_table1 - _KERNEL_VIRTUAL_BASE + 0x003), boot_page_directory - _KERNEL_VIRTUAL_BASE + 768 * 4
 
 	# Set cr3 to the address of the boot_page_directory.
 	movl $(boot_page_directory - 0xC0000000), %ecx

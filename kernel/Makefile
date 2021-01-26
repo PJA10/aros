@@ -20,20 +20,21 @@ LIBS:=$(LIBS) -nostdlib -lk -lgcc
 
 ARCHDIR=arch/$(HOSTARCH)
 DRIVERDIR=driver
+KERNELDIR=kernel
 
 include $(ARCHDIR)/make.config
 include $(DRIVERDIR)/make.config
+include $(KERNELDIR)/make.config
 
-CFLAGS:=$(CFLAGS) $(KERNEL_ARCH_CFLAGS)
-CPPFLAGS:=$(CPPFLAGS) $(KERNEL_ARCH_CPPFLAGS)
-LDFLAGS:=$(LDFLAGS) $(KERNEL_ARCH_LDFLAGS)
-LIBS:=$(LIBS) $(KERNEL_ARCH_LIBS)
+CFLAGS:=$(CFLAGS) $(KERNEL_ARCH_CFLAGS) $(KERNEL_DRIVER_CFLAGS) $(KERNEL_KERNEL_CFLAGS)
+CPPFLAGS:=$(CPPFLAGS) $(KERNEL_ARCH_CPPFLAGS) $(KERNEL_DRIVER_CPPFLAGS) $(KERNEL_KERNEL_CPPFLAGS)
+LDFLAGS:=$(LDFLAGS) $(KERNEL_ARCH_LDFLAGS) $(KERNEL_DRIVER_LDFLAGS) $(KERNEL_KERNEL_LDFLAGS)
+LIBS:=$(LIBS) $(KERNEL_ARCH_LIBS) $(KERNEL_DRIVER_LIBS) $(KERNEL_KERNEL_LIBS)
 
 KERNEL_OBJS=\
 $(KERNEL_ARCH_OBJS) \
 $(KERNEL_DRIVER_OBJS) \
-kernel/kernel.o \
-kernel/mm.o\
+$(KERNEL_KERNEL_OBJS) \
 
 # $(info    KERNEL_OBJS is $(KERNEL_OBJS)) # print KERNEL_OBJS
 
@@ -59,7 +60,7 @@ $(ARCHDIR)/crtn.o \
 all: aros.kernel
 
 aros.kernel: $(OBJS) $(ARCHDIR)/linker.ld
-	$(CC) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS)  -z max-page-size=4096 $(LINK_LIST)
+	$(CC) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS) -z max-page-size=4096 $(LINK_LIST)
 	grub-file --is-x86-multiboot aros.kernel
 
 $(ARCHDIR)/crtbegin.o $(ARCHDIR)/crtend.o:
