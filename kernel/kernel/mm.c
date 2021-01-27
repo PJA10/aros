@@ -7,37 +7,42 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define VirtualAddress(addr) (addr + (uint32_t)&_KERNEL_VIRTUAL_BASE)
+#define KERNEL_VIRTUAL_BASE (uint32_t) &_KERNEL_VIRTUAL_BASE
+#define EARLY_HEAP_MAXSIZE  (uint32_t) &_EARLY_HEAP_MAXSIZE
+#define KERNEL_START        (uint32_t) &_KERNEL_START
+#define KERNEL_END          (uint32_t) &_KERNEL_END
+#define KERNEL_HEAP_START   KERNEL_END
+#define KERNEL_HEAP_END     KERNEL_HEAP_START + EARLY_HEAP_MAXSIZE
 
-uint32_t placement_address;
-uint32_t kernel_heap_start;
-uint32_t kernel_heap_end;
+#define VirtualAddress(addr) (addr + KERNEL_VIRTUAL_BASE)
 
-uint32_t const EARLY_HEAP_MAXSIZE = (uint32_t)&_EARLY_HEAP_MAXSIZE;
 
-uint32_t *bitmap;
+static uint32_t placement_address;
+static uint32_t *bitmap;
 
 
 void mm_init(multiboot_info_t* mbd, unsigned int magic) {
+	// convert multiboot info address to virutal address cz paging in on
+	// TODO: add a scan to make sure multiiboot info is under 1 MB. it can conflict with kernel binary or be abpve 4MB and therefor not reachable right now (virtualizing only 4MB)
+	mbd = (multiboot_info_t*) VirtualAddress((void *)mbd);
+	mbd->mmap_addr = (uint32_t) VirtualAddress((void *)mbd->mmap_addr);
+
 	get_memory_map(mbd, magic);
-	kernel_heap_start = (uint32_t) &kernel_end;
-	kernel_heap_end = kernel_heap_start + EARLY_HEAP_MAXSIZE;
+	printf("\nkernel_start: 0x%x kernel_heap_start: 0x%x, kernel_heap_end: 0x%x\n",  KERNEL_START, KERNEL_HEAP_START, KERNEL_HEAP_END);
 
-	printf("\nkernel_start: 0x%x kernel_heap_start: 0x%x, kernel_heap_end: 0x%x\n",  &kernel_start,kernel_heap_start, kernel_heap_end);
-
-	placement_address = (uint32_t)kernel_heap_start;
+	// set up early kmalloc
+	placement_address = KERNEL_HEAP_START;
 	set_kmalloc_function(early_kmalloc);
 
-	uint32_t mem_upper = ((multiboot_info_t*) VirtualAddress((void *)mbd))->mem_upper; // memory length
+	uint32_t mem_upper = mbd->mem_upper; // high memory length
 	uint32_t highest_free_addr = mem_upper * 1024 + 0x100000; // add the low memory
 	uint32_t bitmap_size = ((highest_free_addr / PAGE_SIZE) / 32)*sizeof(uint32_t);
 	bitmap = (uint32_t *)kmalloc(bitmap_size);
 	memset(bitmap, 0xFF, bitmap_size);
 	bitmap_init(highest_free_addr, mbd);
-
 	printf("\nbitmap:\n");
 	int k = 4;
-	for (int i; i < 35; i++) {
+	for (int i = 0; i < 35; i++) {
 		for (int j = 0; j < k; j++) {
 			printf("%x: %x | ",(k*i+j)*8*4*PAGE_SIZE, bitmap[i*k + j]);
 		}
@@ -53,36 +58,28 @@ void mm_init(multiboot_info_t* mbd, unsigned int magic) {
  *
  */
 void bitmap_init(uint32_t highest_free_address, multiboot_info_t* mbd) {
-	uint32_t phsy_kernel_start = (uint32_t) &kernel_start; // convert from label to uint32_4
-	uint32_t mbd_start_addr = (uint32_t) mbd;
-	uint32_t mbd_end_addr = mbd_start_addr + sizeof(multiboot_info_t);
+	uint32_t mbd_phys_start_addr = (uint32_t) mbd - KERNEL_VIRTUAL_BASE;
+	uint32_t mbd_phys_end_addr = mbd_phys_start_addr + sizeof(multiboot_info_t);
 
-	multiboot_info_t *virtual_mbd = (multiboot_info_t*) VirtualAddress((void *)mbd);
-	uint32_t mmap_start_addr = virtual_mbd->mmap_addr;
-	uint32_t mmap_end_addr = mmap_start_addr + virtual_mbd->mmap_length;
+	uint32_t mmap_phys_start_addr = mbd->mmap_addr - KERNEL_VIRTUAL_BASE;
+	uint32_t mmap_phys_end_addr = mmap_phys_start_addr + mbd->mmap_length;
 
-	//printf("mbd_start_addr: 0x%x, mbd_end_addr: 0x%x\nmmap_start_addr: 0x%x, mmap_end_addr: 0x%x\n", mbd_start_addr, mbd_end_addr, mmap_start_addr, mmap_end_addr);
 	for (uint32_t page_addr = 0; page_addr + PAGE_SIZE < highest_free_address; page_addr += PAGE_SIZE) {
 		uint32_t page_end_addr = page_addr + PAGE_SIZE - 1;
-		//printf("in page %x addr: %x to %x\n", page_addr / PAGE_SIZE, page_addr, page_end_addr);
-		if ((page_addr >= phsy_kernel_start  && page_addr <= kernel_heap_end) ||
-		    (page_end_addr >= phsy_kernel_start  && page_end_addr <= kernel_heap_end)) {
-			printf("page_addr %x is in kernel binary\n", page_addr);
+		if ((page_addr >= KERNEL_START  && page_addr <= KERNEL_HEAP_END) ||
+		    (page_end_addr >= KERNEL_START  && page_end_addr <= KERNEL_HEAP_END)) {
 			continue;
 		}
-		if ((page_addr <= mbd_start_addr && mbd_start_addr <= page_end_addr) ||
-		    (page_addr <= mbd_end_addr && mbd_end_addr <= page_end_addr)) { // if part of the mbd struct is in this page
-			//printf("page_addr %x store the multiiboot dara struct\n", page_addr);
+		if ((page_addr <= mbd_phys_start_addr && mbd_phys_start_addr <= page_end_addr) ||
+		    (page_addr <= mbd_phys_end_addr && mbd_phys_end_addr <= page_end_addr)) { // if part of the mbd struct is in this page
 			continue;
 		}
-		if ((page_addr <= mmap_start_addr && mmap_start_addr <= page_end_addr) ||
-                    (page_addr <= mmap_end_addr && mmap_end_addr <= page_end_addr)) { // if part of the mmap struct is in this page
-			//printf("page_addr %x store the mmap struct\n", page_addr);
+		if ((page_addr <= mmap_phys_start_addr && mmap_phys_start_addr <= page_end_addr) ||
+                    (page_addr <= mmap_phys_end_addr && mmap_phys_end_addr <= page_end_addr)) { // if part of the mmap struct is in this page
                         continue;
 		}
 		int page_type_by_mmap = mmap_is_page_reseved(mbd, page_addr);
 		if (page_type_by_mmap != MULTIBOOT_MEMORY_AVAILABLE) {
-			//printf("page_addr %x is in a reserved entry\n", page_addr);
 			continue;
 		}
 		// if we got to here the page is free
@@ -97,8 +94,7 @@ void bitset_free_bit(int bit) {
 
 int mmap_is_page_reseved(multiboot_info_t* mbd, uint32_t page_addr) {
 	uint32_t page_end_addr = page_addr + PAGE_SIZE;
-	mbd = (multiboot_info_t*) VirtualAddress((void *)mbd);
-	unsigned int mmap_addr = (unsigned int) VirtualAddress((void *)mbd->mmap_addr);
+	unsigned int mmap_addr = mbd->mmap_addr;
 	mmap_entry_t *entry = (mmap_entry_t *)mmap_addr;
 	unsigned int mmap_length = mbd->mmap_length;
 	while ((unsigned int) entry < mmap_addr + mmap_length) {
@@ -131,7 +127,7 @@ uint32_t early_kmalloc(uint32_t sz, int align, uint32_t *phys) {
 		placement_address &= 0xFFFFF000;
 		placement_address += 0x1000;
 	}
-	if (placement_address + sz > kernel_heap_end) {
+	if (placement_address + sz > KERNEL_HEAP_END) {
 		printf("early_kmalloc error, eary heap out of memory\n");
 		abort();
 	}
@@ -142,13 +138,11 @@ uint32_t early_kmalloc(uint32_t sz, int align, uint32_t *phys) {
 	}
 	int32_t tmp = placement_address;
 	placement_address += sz;
-	return VirtualAddress(tmp);
+	return VirtualAddress(tmp); // is this correct?
 }
 
 
 void get_memory_map(multiboot_info_t* mbd, unsigned int magic) {
-	void *pointer = VirtualAddress((void *)mbd);
-        mbd = (multiboot_info_t*) pointer;
         if (magic != MULTIBOOT_BOOTLOADER_MAGIC)
         {
                 printf("Invalid magic number: 0x%x\n",  magic);
@@ -161,14 +155,13 @@ void get_memory_map(multiboot_info_t* mbd, unsigned int magic) {
 		printf("Error: No Multiboot memory map was provided!\n");
 	        abort();
 	}
-	unsigned int virtual_mmap_addr = VirtualAddress(mbd->mmap_addr);
-        mmap_entry_t* entry = (mmap_entry_t*) virtual_mmap_addr;
-	mmap_clear_unrecognised(entry, virtual_mmap_addr, mbd->mmap_length);
-	sort_mmap(entry, virtual_mmap_addr, mbd->mmap_length);
-	handle_mmap_entries_overlap(entry, virtual_mmap_addr, mbd->mmap_length);
-	mbd->mmap_length = combine_mmap_entries(entry, virtual_mmap_addr, mbd->mmap_length);
+        mmap_entry_t* entry = (mmap_entry_t*) mbd->mmap_addr;
+	mmap_clear_unrecognised(entry, mbd->mmap_addr, mbd->mmap_length);
+	sort_mmap(entry, mbd->mmap_addr, mbd->mmap_length);
+	handle_mmap_entries_overlap(entry, mbd->mmap_addr, mbd->mmap_length);
+	mbd->mmap_length = combine_mmap_entries(entry, mbd->mmap_addr, mbd->mmap_length);
 
-	print_mmap(entry, virtual_mmap_addr, mbd->mmap_length);
+	print_mmap(entry, mbd->mmap_addr, mbd->mmap_length);
 }
 
 

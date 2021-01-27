@@ -11,7 +11,7 @@ SECTIONS
 	/* Note that we page-align the sections. */
 	. = 0x100000 + _KERNEL_VIRTUAL_BASE;
 	_read_only_start = . ;
-	kernel_start = . - _KERNEL_VIRTUAL_BASE;
+	_KERNEL_START = . - _KERNEL_VIRTUAL_BASE;
 	/* Add a symbol that indicates the start address of the kernel. */
 	.text ALIGN (4K) : AT (ADDR (.text) - _KERNEL_VIRTUAL_BASE)
 	{
@@ -35,5 +35,5 @@ SECTIONS
 		*(.bootstrap_stack)
 	}
 	/* Add a symbol that indicates the end address of the kernel. */
-	kernel_end = ALIGN(4K) - _KERNEL_VIRTUAL_BASE;
+	_KERNEL_END = ALIGN(4K) - _KERNEL_VIRTUAL_BASE;
 }

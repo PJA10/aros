@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-uint32_t (*curr_kmalloc_func)(uint32_t sz, int align, uint32_t *phys);
+static uint32_t (*curr_kmalloc_func)(uint32_t sz, int align, uint32_t *phys);
 
 uint32_t kmalloc_internal(uint32_t sz, int align, uint32_t *phys) {
 	//printf("in kmalloc_internal\n");

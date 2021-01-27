@@ -13,8 +13,8 @@
 
 extern uint32_t _KERNEL_VIRTUAL_BASE;
 extern uint32_t _EARLY_HEAP_MAXSIZE;
-extern uint32_t kernel_end;
-extern uint32_t kernel_start;
+extern uint32_t _KERNEL_END;
+extern uint32_t _KERNEL_START;
 
 void get_memory_map(multiboot_info_t* mbd, unsigned int magic);
 void mm_init(multiboot_info_t* mbd, unsigned int magic);
