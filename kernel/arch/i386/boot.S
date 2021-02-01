@@ -69,7 +69,7 @@ _start:
 	loop 1b
 
 
-	# Map the page table to both virtual addresses 0x00000000 and (_KERNEL_VIRTUAL_BASE)0xC0000000.
+	# Map the page table to both virtual addresses 0x00000000 and _KERNEL_VIRTUAL_BASE(0xC0000000).
 	movl $(boot_page_table1 - _KERNEL_VIRTUAL_BASE + 0x003), boot_page_directory - _KERNEL_VIRTUAL_BASE + 0
 	movl $(boot_page_table1 - _KERNEL_VIRTUAL_BASE + 0x003), boot_page_directory - _KERNEL_VIRTUAL_BASE + 768 * 4
 
@@ -144,6 +144,7 @@ loadPageDirectory:
 	mov %esp, %ebp
 	mov 8(%esp), %eax
 	mov %eax, %cr3
+//	jmp .
 	mov %ebp, %esp
 	pop %ebp
 	ret
