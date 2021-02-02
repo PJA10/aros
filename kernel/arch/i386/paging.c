@@ -3,71 +3,58 @@
 #include <kernel/heap.h>
 #include <kernel/pmm.h>
 #include <string.h>
-
-typedef struct page
-{
-	uint32_t present    : 1;   // Page present in memory
-	uint32_t rw         : 1;   // Read-only if clear, readwrite if set
-	uint32_t user       : 1;   // Supervisor level only if clear
-	uint32_t wt         : 1;   // write through
-	uint32_t cd         : 1;   // cache disabled
-	uint32_t accessed   : 1;   // Has the page been accessed since last refresh?
-	uint32_t dirty      : 1;   // Has the page been written to since last refresh?
-	uint32_t zero       : 1;   // zero bit
-	uint32_t global     : 1;   // if set, prevents the TLB from updating the address in its cache if CR3 is reset.
-	uint32_t unused     : 3;   // Amalgamation of unused and reserved bits
-	uint32_t frame      : 20;  // Frame address (shifted right 12 bits)
-} page_t;
-
-typedef struct page_table
-{
-	page_t pages[1024];
-} page_table_t;
-
-typedef union page_directory_entry
-{
-	struct{
-		uint32_t present    : 1;   // Page present in memory
-		uint32_t rw         : 1;   // Read-only if clear, readwrite if set
-		uint32_t user       : 1;   // Supervisor level only if clear
-		uint32_t wt         : 1;   // write through
-		uint32_t cd         : 1;   // cache disabled
-		uint32_t accessed   : 1;   // Has the page been accessed since last refresh?
-		uint32_t zero       : 1;   // zero bit
-		uint32_t page_size  : 1;   // If the bit is set, then pages are 4 MiB in size.
-		uint32_t ignored    : 1;   // cpu reserved
-		uint32_t unused     : 3;   // Amalgamation of unused and reserved bits
-		uint32_t page_table : 20;  // page table phys address (shifted right 12 bits)
-	};
-	uint32_t int_rep;
-} page_directory_entry_t;
-
-
-typedef struct page_directory
-{
-	/**
-	Array of pointers to pagetables.
-	**/
-	page_table_t *tables[1024];
-	/**
-	Array of pointers to the pagetables above, but gives their *physical*
-	location, for loading into the CR3 register.
-	**/
-	page_directory_entry_t tablesPhysical[1024];
-	/**
-	The physical address of tablesPhysical. This comes into play
-	when we get our kernel heap allocated and the directory
-	may be in a different location in virtual memory.
-	**/
-	uint32_t physicalAddr;
-} page_directory_t;
-
+#include <arch-i386/paging.h>
 
 page_directory_t *kernel_directory;
 page_directory_t *current_directory;
-uint32_t *page_directory __attribute__((aligned(4096)));
-uint32_t *first_page_table __attribute__((aligned(4096)));
-extern void loadPageDirectory(uint32_t*);
+uint32_t *page_directory;
+uint32_t *first_page_table;
+extern void loadPageDirectory(uint32_t);
+
+#define FLAGS_P_RW_U (0x07)
+#define RECURSIVE_TABLE_INDEX (1023)
+
+page_directory_t *new_page_directory() {
+	page_directory_t *pd = (page_directory_t*)kmalloc_a(sizeof(page_directory_t));
+	memset(pd, 0, sizeof(page_directory_t));
+	pd->physicalAddr = (uint32_t) PHYS_ADDRESS(pd->tablesPhysical);
+
+	page_table_t *recursive_table = (page_table_t*)kmalloc_a(sizeof(page_table_t));
+        memset(recursive_table, 0, sizeof(page_table_t));
+	recursive_table->pages[1023] = (page_t) {1, 1, 1, 0, 0, 0, 0, 0, 0, 0, pd->physicalAddr >> 12}; // present, readwrite, user
+	pd->tables[RECURSIVE_TABLE_INDEX] = recursive_table; // we set must
+	pd->tablesPhysical[RECURSIVE_TABLE_INDEX].int_rep = ((uint32_t) PHYS_ADDRESS(recursive_table)) | FLAGS_P_RW_U;
+	return pd;
+}
+
+/*
+ * Also sets the new page table in the recursive page table (so dont use is to set the recursive page table itself).
+ */
+void set_page_table(page_directory_t *this, page_table_t *table, int index, uint16_t flags) {
+	this->tables[index] = table;
+	this->tablesPhysical[index].int_rep = ((uint32_t) PHYS_ADDRESS(table)) | flags;
+	this->tables[RECURSIVE_TABLE_INDEX]->pages[index] = (page_t) {1, 1, 1, 0, 0, 0, 0, 0, 0, 0, PHYS_ADDRESS(table) >> 12}; // present, readwrite, user
+}
+
+void *get_physaddr(void *virtualaddr)
+{
+	uint32_t pdindex = (uint32_t)virtualaddr >> 22;
+	uint32_t ptindex = (uint32_t)virtualaddr >> 12 & 0x03FF;
+
+	page_directory_entry_t *pd = (page_directory_entry_t *)0xFFFFF000;
+	// Here you need to check whether the PD entry is present.
+	if (pd[pdindex].present != 1) {
+		printf("error in get_physaddr, page directory entry not present\n");
+		return NULL;
+	}
+	page_table_t *pt = (page_table_t *) (((uint32_t *)0xFFC00000) + (0x400 * pdindex));
+	// Here you need to check whether the PT entry is present.
+	if (pt->pages[ptindex].present != 1) {
+                printf("error in get_physaddr, page directory entry not present\n");
+                return NULL;
+        }
+	return (void *)((pt->pages[ptindex].frame << 12) + ((uint32_t)virtualaddr & 0xFFF));
+}
 
 void paging_init() {
 	uint32_t cr3;
@@ -84,13 +71,21 @@ void paging_init() {
 	printf("existing_page_directory: 0x%x, existing_page_table: 0x%x\n", existing_page_directory, existing_page_table);
 	printf("existing_page_table[0]: 0x%x\n", existing_page_table[0]);
 
-	kernel_directory = (page_directory_t*)kmalloc_a(sizeof(page_directory_t));
-	memset(kernel_directory, 0, sizeof(page_directory_t));
+	kernel_directory = new_page_directory();
+	current_directory = kernel_directory;
 	printf("kernel_directory: 0x%x &kernel_directory->tablesPhysical: 0x%x\n", kernel_directory, &kernel_directory->tablesPhysical);
-	kernel_directory->physicalAddr = (uint32_t) PHYS_ADDRESS(kernel_directory->tablesPhysical);
-	kernel_directory->tables[768] = (page_table_t *) existing_page_table;
-	//memcpy(kernel_directory->tablesPhysical, existing_page_directory, 1024*4);
-	kernel_directory->tablesPhysical[768].int_rep = ((uint32_t) PHYS_ADDRESS(existing_page_table)) | 0x07;
+	set_page_table(kernel_directory, (page_table_t *)existing_page_table, 768, FLAGS_P_RW_U);
+
+	//asm("jmp .");
+	//printf("kernel_directory->tables[RECURSIVE_TABLE_INDEX] addr: 0x%x\n", kernel_directory->tables[RECURSIVE_TABLE_INDEX]);
+	/*
+	unsigned char *p = kernel_directory->tables[RECURSIVE_TABLE_INDEX];
+	for (int i = 0; i < 1024*4; i++) {
+		printf("%x: %x ", &p[i], p[i]);
+		if (i%10 == 0)
+			printf("\n");
+	}
+	*/
 	/*
 	printf("kernel_directory->physicalAddr: 0x%x\n", kernel_directory->physicalAddr);
 	printf("kernel_directory->tables[768]: 0x%x\n", kernel_directory->tables[768]);
@@ -111,6 +106,7 @@ void paging_init() {
                 printf("%d: %x ", i, kernel_directory->tablesPhysical[i]);
         }
 	printf("\n");*/
+
 	int final_kernel_page = KERNEL_HEAP_END / 4096;
 	if (KERNEL_HEAP_END % 4096 != 0) { // round up divition
 		final_kernel_page++;
@@ -118,10 +114,11 @@ void paging_init() {
 	for (int i = final_kernel_page; i < 1024; i++) {
 		kernel_directory->tables[768]->pages[i].present = 0;
 	}
-	//TODO: clear the old page_directory memory as free
+	//TODO: mark the old page_directory memory as free(boot_page_directory)
 
 	//printf("\nKERNEL_HEAP_END: 0x%x\nfinal_kernel_page: 0x%x", KERNEL_HEAP_END, final_kernel_page);
 	loadPageDirectory(kernel_directory->physicalAddr);
+	printf("get_physaddr(0x010e000): 0x%x - expected NULL\n", get_physaddr(0x010e000));
 
 
 }
