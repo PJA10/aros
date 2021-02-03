@@ -17,8 +17,8 @@ static uint32_t next_free_frame;
 void pmm_init(multiboot_info_t* mbd, unsigned int magic) {
 	// convert multiboot info address to virutal address cz paging in on
 	// TODO: add a scan to make sure multiiboot info is under 1 MB. it can conflict with kernel binary or be abpve 4MB and therefor not reachable right now (virtualizing only 4MB)
-	mbd = (multiboot_info_t*) VIRTUAL_ADDRESS((void *)mbd);
-	mbd->mmap_addr = (uint32_t) VIRTUAL_ADDRESS((void *)mbd->mmap_addr);
+	mbd = VIRTUAL_ADDRESS(mbd);
+	mbd->mmap_addr = (uint32_t) VIRTUAL_ADDRESS(mbd->mmap_addr);
 
 	fix_memory_map(mbd, magic);
 	printf("\nkernel_start: 0x%x kernel_heap_start: 0x%x, kernel_heap_end: 0x%x\n",  KERNEL_START, KERNEL_HEAP_START, KERNEL_HEAP_END);
@@ -30,7 +30,7 @@ void pmm_init(multiboot_info_t* mbd, unsigned int magic) {
 	uint32_t mem_upper = mbd->mem_upper; // high memory length
 	uint32_t highest_free_addr = mem_upper * 1024 + 0x100000; // add the low memory
 	bitmap_size = ((highest_free_addr / PAGE_SIZE) / 32)*sizeof(uint32_t);
-	bitmap = (uint32_t *)kmalloc(bitmap_size);
+	bitmap = kmalloc(bitmap_size);
 	memset(bitmap, 0xFF, bitmap_size);
 	bitmap_init(highest_free_addr, mbd);
 	printf("\nbitmap:\n");
@@ -154,7 +154,7 @@ int mmap_get_page_type(multiboot_info_t* mbd, uint32_t page_addr) {
  * The allocator is a WaterMark allocator which just keep track of how far you've allocated and forget about the notion of "freeing".
  *
  */
-uint32_t early_kmalloc(uint32_t sz, int align, uint32_t *phys) {
+void *early_kmalloc(uint32_t sz, int align, uint32_t *phys) {
 	if (align == 1 && (placement_address & 0xFFFFF000)) // If the address is not already page-aligned
 	{
 		// Align it.

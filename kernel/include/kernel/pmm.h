@@ -23,13 +23,11 @@ extern uint32_t _KERNEL_START;
 #define KERNEL_HEAP_START   (KERNEL_END)
 #define KERNEL_HEAP_END     (KERNEL_HEAP_START + EARLY_HEAP_MAXSIZE)
 
-#define VIRTUAL_ADDRESS(addr) (((uint32_t) addr) + KERNEL_VIRTUAL_BASE)
-#define PHYS_ADDRESS(addr) (((uint32_t) addr) - KERNEL_VIRTUAL_BASE)
-
+#define VIRTUAL_ADDRESS(addr) ((void *)((uint32_t) addr + KERNEL_VIRTUAL_BASE))
 
 void fix_memory_map(multiboot_info_t* mbd, unsigned int magic);
 void pmm_init(multiboot_info_t* mbd, unsigned int magic);
-uint32_t early_kmalloc(uint32_t sz, int align, uint32_t *phys);
+void *early_kmalloc(uint32_t sz, int align, uint32_t *phys);
 
 void bitmap_init(uint32_t highest_free_address, multiboot_info_t* mbd);
 int mmap_get_page_type(multiboot_info_t* mbd, uint32_t page_addr);

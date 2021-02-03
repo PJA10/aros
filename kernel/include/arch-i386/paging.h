@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define KERNEL_PHYS_ADDRESS(addr) ((void *)((uint32_t) addr - KERNEL_VIRTUAL_BASE))
+
 typedef struct page
 {
         uint32_t present    : 1;   // Page present in memory
@@ -64,4 +66,6 @@ typedef struct page_directory
 
 void paging_init();
 void set_page_table(page_directory_t *this, page_table_t *table, int index, uint16_t flags);
+void *get_physaddr(void *virtualaddr);
+extern void loadPageDirectory(uint32_t);
 #endif

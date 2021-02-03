@@ -1,29 +1,31 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <kernel/heap.h>
 #include <kernel/pmm.h>
 #include <string.h>
 #include <arch-i386/paging.h>
+#include <stdbool.h>
+
+#include <assert.h>
 
 page_directory_t *kernel_directory;
 page_directory_t *current_directory;
-uint32_t *page_directory;
-uint32_t *first_page_table;
-extern void loadPageDirectory(uint32_t);
+static bool is_recursive_table_up = false;
 
 #define FLAGS_P_RW_U (0x07)
 #define RECURSIVE_TABLE_INDEX (1023)
 
 page_directory_t *new_page_directory() {
-	page_directory_t *pd = (page_directory_t*)kmalloc_a(sizeof(page_directory_t));
+	page_directory_t *pd = kmalloc_a(sizeof(page_directory_t));
 	memset(pd, 0, sizeof(page_directory_t));
-	pd->physicalAddr = (uint32_t) PHYS_ADDRESS(pd->tablesPhysical);
+	pd->physicalAddr = (uint32_t) get_physaddr(pd->tablesPhysical);
 
-	page_table_t *recursive_table = (page_table_t*)kmalloc_a(sizeof(page_table_t));
+	page_table_t *recursive_table = kmalloc_a(sizeof(page_table_t));
         memset(recursive_table, 0, sizeof(page_table_t));
 	recursive_table->pages[1023] = (page_t) {1, 1, 1, 0, 0, 0, 0, 0, 0, 0, pd->physicalAddr >> 12}; // present, readwrite, user
-	pd->tables[RECURSIVE_TABLE_INDEX] = recursive_table; // we set must
-	pd->tablesPhysical[RECURSIVE_TABLE_INDEX].int_rep = ((uint32_t) PHYS_ADDRESS(recursive_table)) | FLAGS_P_RW_U;
+	pd->tables[RECURSIVE_TABLE_INDEX] = recursive_table; // we must set the table ourself because set_page_table asuums the recursive table is up
+	pd->tablesPhysical[RECURSIVE_TABLE_INDEX].int_rep = ((uint32_t) get_physaddr(recursive_table)) | FLAGS_P_RW_U;
 	return pd;
 }
 
@@ -32,12 +34,14 @@ page_directory_t *new_page_directory() {
  */
 void set_page_table(page_directory_t *this, page_table_t *table, int index, uint16_t flags) {
 	this->tables[index] = table;
-	this->tablesPhysical[index].int_rep = ((uint32_t) PHYS_ADDRESS(table)) | flags;
-	this->tables[RECURSIVE_TABLE_INDEX]->pages[index] = (page_t) {1, 1, 1, 0, 0, 0, 0, 0, 0, 0, PHYS_ADDRESS(table) >> 12}; // present, readwrite, user
+	this->tablesPhysical[index].int_rep = ((uint32_t) get_physaddr(table)) | flags;
+	this->tables[RECURSIVE_TABLE_INDEX]->pages[index] = (page_t) {1, 1, 0, 0, 0, 0, 0, 0, 0, 0, (uint32_t) get_physaddr(table) >> 12}; // present, readwrite
 }
 
-void *get_physaddr(void *virtualaddr)
-{
+void *get_physaddr(void *virtualaddr) {
+	if (!is_recursive_table_up) {
+		return (void *) KERNEL_PHYS_ADDRESS(virtualaddr);
+	}
 	uint32_t pdindex = (uint32_t)virtualaddr >> 22;
 	uint32_t ptindex = (uint32_t)virtualaddr >> 12 & 0x03FF;
 
@@ -67,7 +71,7 @@ void paging_init() {
         );
 
 	uint32_t *existing_page_directory = (uint32_t *)VIRTUAL_ADDRESS(cr3);
-	uint32_t *existing_page_table = (uint32_t*) VIRTUAL_ADDRESS(existing_page_directory[768] & 0xfffff000);
+	uint32_t *existing_page_table = (uint32_t*) VIRTUAL_ADDRESS((existing_page_directory[768] & 0xfffff000));
 	printf("existing_page_directory: 0x%x, existing_page_table: 0x%x\n", existing_page_directory, existing_page_table);
 	printf("existing_page_table[0]: 0x%x\n", existing_page_table[0]);
 
@@ -118,7 +122,5 @@ void paging_init() {
 
 	//printf("\nKERNEL_HEAP_END: 0x%x\nfinal_kernel_page: 0x%x", KERNEL_HEAP_END, final_kernel_page);
 	loadPageDirectory(kernel_directory->physicalAddr);
-	printf("get_physaddr(0x010e000): 0x%x - expected NULL\n", get_physaddr(0x010e000));
-
-
+	is_recursive_table_up = true;
 }
