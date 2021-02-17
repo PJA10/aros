@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 
 static uint32_t placement_address;
@@ -44,19 +45,21 @@ void pmm_init(multiboot_info_t* mbd, unsigned int magic) {
 	printf("\n");
 }
 
-uint32_t allocate_frame() {
+uint32_t pmm_allocate_frame() {
 	uint32_t bit = bitmap_test_bit(next_free_frame);
+	uint32_t first_try = bit;
 	while (bit != 0) { // while the bit is'nt free
 		if (INDEX_FROM_BIT(bit) >= bitmap_size) {
 			next_free_frame = 0;
 		}
 		next_free_frame++;
+		ASSERT((bit == first_try)); // out of memory??
 		bit = bitmap_test_bit(next_free_frame);
 	}
 	uint32_t given_frame = next_free_frame;
 	bitmap_set_bit(given_frame);
 	next_free_frame++;
-	return given_frame;
+	return given_frame * PAGE_SIZE;
 }
 
 void free_frame(uint32_t frame) {

@@ -27,6 +27,7 @@ typedef struct page_table
 
 typedef union page_directory_entry
 {
+	// TODO: replace the union with the same trick used with page_t (see set_page)
         struct{
                 uint32_t present    : 1;   // Page present in memory
                 uint32_t rw         : 1;   // Read-only if clear, readwrite if set
@@ -62,7 +63,10 @@ typedef struct page_directory
         uint32_t physicalAddr;
 } page_directory_t;
 
-
+static inline void __native_flush_tlb_single(uint32_t addr)
+{
+   asm volatile("invlpg (%0)" ::"r" (addr) : "memory");
+}
 
 void paging_init();
 void set_page_table(page_directory_t *this, page_table_t *table, int index, uint16_t flags);

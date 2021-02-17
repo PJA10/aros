@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 
 __attribute__((interrupt)) void divide_by_zero_handler(struct interrupt_frame* frame)
@@ -72,7 +73,15 @@ __attribute__((interrupt)) void page_fault_handler(struct interrupt_frame* frame
 	: /* no input */
 	: "%eax"
 	);
+	bool present = !(error_code & 1);
+	bool rw = (error_code & 2);
+	bool us = (error_code & 4);
+	bool reserved = (error_code & 8);
 	printf("CR0: 0x%x, CR2: 0x%x, CR3: 0x%x\n", cr0, cr2, cr3);
+	if (present) printf("Page not present\n");
+	if (rw) printf("Page not writable\n");
+	if (us) printf("Page not writable from user-mode\n");
+	if (reserved) printf("Page reserved bits overwitten\n");
 	abort();
 }
 

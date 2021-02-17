@@ -34,7 +34,7 @@ int mmap_get_page_type(multiboot_info_t* mbd, uint32_t page_addr);
 void bitmap_clear_bit(uint32_t bit);
 void bitmap_set_bit(uint32_t bit);
 uint32_t bitmap_test_bit(uint32_t bit);
-uint32_t allocate_frame();
+uint32_t pmm_allocate_frame();
 void free_frame(uint32_t frame);
 
 
