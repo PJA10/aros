@@ -60,17 +60,17 @@ void set_page(page_t *page, uint32_t frame_address, uint16_t flags) {
 	*page = *p;
 }
 
-void *vmm_allocate_page(page_directory_t *this, uint32_t addr, uint16_t flags) {
+void *vmm_allocate_page(uint32_t addr, uint16_t flags) {
+	page_directory_t *this = current_directory;
 	uint32_t page_addr = addr & 0xFFFFF000;
-	//printf("in vmm_alloc_page, addr: 0x%x, page_addr: 0x%x\n", addr, page_addr);
 	uint32_t pde_index = page_addr >> 22;
 	uint32_t pte_index = page_addr >> 12 & 0x03FF;
 	if (!this->tablesPhysical[pde_index].present) {
-		//printf("vmm_alloc_page: in first if, pde_index: 0x%x\n", pde_index);
 		uint32_t new_table_phys = pmm_allocate_frame();
 		this->tablesPhysical[pde_index].int_rep = new_table_phys | FLAGS_P_RW_U;
-		this->tables[pde_index] = (page_table_t *)(0xFFC00000 + pde_index*0x1000); // what is the point of having tables array if it points to the recursive paging addres of the table!
-		//printf("this->tables[pde_index]: 0x%x\n", this->tables[pde_index]);
+		this->tables[pde_index] = (page_table_t *)(0xFFC00000 + pde_index*0x1000);
+		// what is the point of having tables array if it points to the recursive paging addres of the table! - 17.2.21
+		// Its fine in this case because its kernel space and there for will be always mapped. we wont try to modify it without it being used
 		memset(this->tables[pde_index], 0, sizeof(page_directory_entry_t));
 		for (uint32_t i= pde_index << 22; i < (pde_index+1) << 22; i += PAGE_SIZE) {
 			__native_flush_tlb_single(i);
@@ -82,7 +82,7 @@ void *vmm_allocate_page(page_directory_t *this, uint32_t addr, uint16_t flags) {
 		return NULL; // page is all ready present at the reqested address
 	}
 	uint32_t new_frame= pmm_allocate_frame();
-	set_page(&(this->tables[pde_index]->pages[pte_index]), new_frame, flags);
+	set_page(&(this->tables[pde_index]->pages[pte_index]), new_frame, flags | 0x1); // must be present
 	__native_flush_tlb_single(addr);
 	return (void *) addr;
 }
@@ -112,8 +112,11 @@ void paging_init() {
 	for (int i = final_kernel_page; i < 1024; i++) {
 		kernel_directory->tables[768]->pages[i].present = 0;
 	}
-	//TODO: mark the old page_directory memory as free (symbol: boot_page_directory)
+	// TODO: mark the old page_directory memory as free (symbol: boot_page_directory)
+	// maybe we can sets existing_page_table virtual addres as its recursive paging address because its in kernel space and always gonna be mapped,
+	// then we will be able to free its cuurent virtual address and get another virtual page for the kernel.
 
 	loadPageDirectory(kernel_directory->physicalAddr);
 	is_recursive_paging_up = true;
+	adv_kmalloc_init();
 }

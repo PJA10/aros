@@ -72,4 +72,5 @@ void paging_init();
 void set_page_table(page_directory_t *this, page_table_t *table, int index, uint16_t flags);
 void *get_physaddr(void *virtualaddr);
 extern void loadPageDirectory(uint32_t);
+void *vmm_allocate_page(uint32_t addr, uint16_t flags);
 #endif
