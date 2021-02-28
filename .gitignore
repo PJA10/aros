@@ -1,4 +1,4 @@
 *.iso
 isodir
 sysroot
-*.o
+debug-logs.txt

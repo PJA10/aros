@@ -3,13 +3,13 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <kernel/tty.h>
+#include <driver/tty.h>
 
 #include "vga.h"
 
 static const size_t VGA_WIDTH = 80;
 static const size_t VGA_HEIGHT = 25;
-static uint16_t* const VGA_MEMORY = (uint16_t*) 0xB8000;
+static uint16_t* const VGA_MEMORY = (uint16_t*) 0xC00B8000;// 0xC03FF000;
 
 static size_t terminal_row;
 static size_t terminal_column;

@@ -1,43 +1,39 @@
-/* The bootloader will look at this image and start execution at the symbol
-   designated at the entry point. */
-ENTRY(_start)
+ENTRY (_start)
+OUTPUT_FORMAT(elf32-i386)
 
-/* Tell where the various sections of the object files will be put in the final
-   kernel image. */
+_KERNEL_VIRTUAL_BASE = 0xC0000000;
+_EARLY_HEAP_MAXSIZE = 0x50000;
+
 SECTIONS
 {
-	/* Begin putting sections at 1 MiB, a conventional place for kernels to be
-	   loaded at by the bootloader. */
-	. = 1M;
-
-	/* First put the multiboot header, as it is required to be put very early
-	   early in the image or the bootloader won't recognize the file format.
-	   Next we'll put the .text section. */
-	.text BLOCK(4K) : ALIGN(4K)
+	/* The kernel will live at 3GB + 1MB in the virtual address space, */
+	/* which will be mapped to 1MB in the physical address space. */
+	/* Note that we page-align the sections. */
+	. = 0x100000 + _KERNEL_VIRTUAL_BASE;
+	_read_only_start = . ;
+	_KERNEL_START = . - _KERNEL_VIRTUAL_BASE;
+	/* Add a symbol that indicates the start address of the kernel. */
+	.text ALIGN (4K) : AT (ADDR (.text) - _KERNEL_VIRTUAL_BASE)
 	{
-		*(.multiboot)
+		*(.multiboot.data)
+		*(.multiboot.text)
 		*(.text)
 	}
-
-	/* Read-only data. */
-	.rodata BLOCK(4K) : ALIGN(4K)
+	.rodata ALIGN (4K) : AT (ADDR (.rodata) - _KERNEL_VIRTUAL_BASE)
 	{
 		*(.rodata)
 	}
-
-	/* Read-write data (initialized) */
-	.data BLOCK(4K) : ALIGN(4K)
+	_read_only_end = .;
+	.data ALIGN (4K) : AT (ADDR (.data) - _KERNEL_VIRTUAL_BASE)
 	{
 		*(.data)
 	}
-
-	/* Read-write data (uninitialized) and stack */
-	.bss BLOCK(4K) : ALIGN(4K)
+	.bss ALIGN (4K) : AT (ADDR (.bss) - _KERNEL_VIRTUAL_BASE)
 	{
 		*(COMMON)
 		*(.bss)
+		*(.bootstrap_stack)
 	}
-
-	/* The compiler may produce other sections, put them in the proper place in
-	   in this file, if you'd like to include them in the final kernel. */
+	/* Add a symbol that indicates the end address of the kernel. */
+	_KERNEL_END = ALIGN(4K) - _KERNEL_VIRTUAL_BASE;
 }

@@ -1,17 +1,33 @@
 #include <stdio.h>
+#include <stdint.h>
 
-#include <kernel/tty.h>
-#include <kernel/serial.h>
+#include <driver/tty.h>
+#include <driver/serial.h>
 
-void kernel_main(void) {
+#include <kernel/mm.h>
+
+/*
+ * TODO: fix the fact that array out of range doesn't get caught
+ * Stack Smash Protector
+ * Testing and Unit Testing?
+ * Running the os on real hardware
+ * Hardware Abstraction - Device Management?
+ * arch independent isr
+ * interrupt driven io / io using DMA
+ * Timers - maybe PIT first?
+ * improve kernel heap - tree instead of linked list
+ *
+ * keep in mind Code Structuring + Portability
+ */
+
+void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
 	terminal_initialize();
 	init_serial();
-	str_write_serial("debug: boot - OK\n");
-	for(int i = 0; i < 40; i++) {
-		printf("%d Base 10- %x Base 16\n", i,i);
+	printf("kernel main start\n");
+	mm_init(mbd, magic);
+	printf("kernel main finished, hlting\n");
+	for(;;) {
+		asm("hlt");
 	}
-	printf("debug: terminal scrolling  - OK\n");
-	printf("itamar is a noob\n");
-	str_write_serial("debug: serial debug - OK\n");
 }
 
