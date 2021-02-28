@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <stdio.h>
 
 #include <kernel/heap.h>
 #include <arch-i386/paging.h>
@@ -44,26 +43,30 @@ void set_kfree( void (*func_p)(void *addr)) {
 	curr_kfree_func = func_p;
 }
 
-static Header base;
-static Header *freep = NULL;
-static uint32_t end_of_kernel_heap;
 
-#define NALLOC 1
+
+static Header base; // empry list to get started
+static Header *freep = NULL; // start of free list
+static uint32_t end_of_kernel_heap; // address of the end of the heap
 
 /*
  * this function ask the system for more memoty.
+ * TODO: add a max to the kernel heap, and change the heap location to 0xd0000000-0xe0000000
  */
 static Header *morecore(uint32_t nu) {
 	uint32_t cp;
 	Header *up;
-
 	if (nu < NALLOC)
 		nu = NALLOC;
 	cp = end_of_kernel_heap;
 	end_of_kernel_heap += nu * sizeof(Header);
 	if (end_of_kernel_heap/PAGE_SIZE > cp/PAGE_SIZE) {
-		if (vmm_allocate_page(end_of_kernel_heap, 0x3) == NULL) {
-			return NULL;
+		uint32_t curr_page = cp + PAGE_SIZE;
+		// alocate all the not present pages in the new allocated memory
+		for (; end_of_kernel_heap/PAGE_SIZE >= curr_page/PAGE_SIZE; curr_page += PAGE_SIZE) {
+			if (vmm_allocate_page(curr_page, 0x3) == NULL) {
+				return NULL; // no memory?
+			}
 		}
 	}
 	up = (Header *) cp;
@@ -72,25 +75,27 @@ static Header *morecore(uint32_t nu) {
 	return freep;
 }
 
-
+/*
+ * this function is the kernel general-purposr storage allocator
+ */
 void *adv_kmalloc(uint32_t nbytes, int align, uint32_t *phys) {
 	Header *p, *prevp;
 	uint32_t nunits;
 
 	nunits = (nbytes + sizeof(Header)-1) / sizeof(Header) + 1;
-	if ((prevp = freep) == NULL) {
+	if ((prevp = freep) == NULL) { // no free list yet
 		base.s.ptr = freep = prevp = &base;
 		base.s.size = 0;
-		end_of_kernel_heap = KERNEL_HEAP_END + KERNEL_VIRTUAL_BASE;
-		if (vmm_allocate_page(end_of_kernel_heap, 0x3) == NULL) {
+		end_of_kernel_heap = KERNEL_HEAP_END + KERNEL_VIRTUAL_BASE; // run time value (cant be defined in global)
+		if (vmm_allocate_page(end_of_kernel_heap, 0x3) == NULL) { // allocate the first page
 			return NULL;
 		}
 	}
 	for (p = prevp->s.ptr; ; prevp = p, p = p->s.ptr) {
-		if (p->s.size >= nunits) {
-			if (p->s.size == nunits) {
+		if (p->s.size >= nunits) { // big enough
+			if (p->s.size == nunits) { // exacly
 				prevp->s.ptr = p->s.ptr;
-			} else {
+			} else { // alocate tail end
 				p->s.size -= nunits;
 				p += p->s.size;
 				p->s.size = nunits;
@@ -98,15 +103,17 @@ void *adv_kmalloc(uint32_t nbytes, int align, uint32_t *phys) {
 			freep = prevp;
 			return (void *)(p+1);
 		}
-		if (p == freep) {
+		if (p == freep) { // wrapped around free list
 			if ((p = morecore(nunits)) == NULL) {
-				return NULL;
+				return NULL; // no memory?
 			}
 		}
 	}
 }
 
-
+/*
+ * this function puts a given block in the free list
+ */
 void adv_kfree(void *ap) {
 	Header *bp, *p;
 

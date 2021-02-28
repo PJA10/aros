@@ -22,7 +22,7 @@ void pmm_init(multiboot_info_t* mbd, unsigned int magic) {
 	mbd->mmap_addr = (uint32_t) VIRTUAL_ADDRESS(mbd->mmap_addr);
 
 	fix_memory_map(mbd, magic);
-	printf("\nkernel_start: 0x%x kernel_heap_start: 0x%x, kernel_heap_end: 0x%x\n",  KERNEL_START, KERNEL_HEAP_START, KERNEL_HEAP_END);
+	//printf("\nkernel_start: 0x%x kernel_heap_start: 0x%x, kernel_heap_end: 0x%x\n",  KERNEL_START, KERNEL_HEAP_START, KERNEL_HEAP_END); // debug
 
 	// set up early kmalloc
 	placement_address = KERNEL_HEAP_START;
@@ -34,6 +34,8 @@ void pmm_init(multiboot_info_t* mbd, unsigned int magic) {
 	bitmap = kmalloc(bitmap_size);
 	memset(bitmap, 0xFF, bitmap_size);
 	bitmap_init(highest_free_addr, mbd);
+	/*
+	//debug
 	printf("\nbitmap:\n");
 	int k = 4;
 	for (int i = 0; i < 35; i++) {
@@ -43,6 +45,7 @@ void pmm_init(multiboot_info_t* mbd, unsigned int magic) {
 		printf("\n");
 	}
 	printf("\n");
+	*/
 }
 
 uint32_t pmm_allocate_frame() {
@@ -202,7 +205,7 @@ void fix_memory_map(multiboot_info_t* mbd, unsigned int magic) {
 	handle_mmap_entries_overlap(entry, mbd->mmap_addr, mbd->mmap_length);
 	mbd->mmap_length = combine_mmap_entries(entry, mbd->mmap_addr, mbd->mmap_length);
 
-	print_mmap(entry, mbd->mmap_addr, mbd->mmap_length);
+	//print_mmap(entry, mbd->mmap_addr, mbd->mmap_length); // debug
 }
 
 
