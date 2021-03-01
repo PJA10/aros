@@ -11,6 +11,4 @@ Aros currently after boot:
 
 Resources
 ------
-Much of the code from Aros is adapted from or inspired by the following resources:
-
-[The OSDev Wiki](https://wiki.osdev.net)
+Much of the code from Aros is adapted from or inspired by [The OSDev Wiki](https://wiki.osdev.net).
