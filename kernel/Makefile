@@ -13,7 +13,7 @@ EXEC_PREFIX?=$(PREFIX)
 BOOTDIR?=$(EXEC_PREFIX)/boot
 INCLUDEDIR?=$(PREFIX)/include
 
-CFLAGS:=$(CFLAGS) -Xlinker -Map=aros.map -ffreestanding -Wall -Wextra -mgeneral-regs-only
+CFLAGS:=$(CFLAGS) -Xlinker -Map=aros.map -ffreestanding -Wall -Wextra -mgeneral-regs-only -fstack-protector
 CPPFLAGS:=$(CPPFLAGS) -D__is_kernel -Iinclude
 LDFLAGS:=$(LDFLAGS)
 LIBS:=$(LIBS) -nostdlib -lk -lgcc
