@@ -77,7 +77,7 @@ void *vmm_allocate_page(uint32_t addr, uint16_t flags) {
 		}
 	}
 
-	if(this->tables[pde_index]->pages[pte_index].present) {
+	if (this->tables[pde_index]->pages[pte_index].present) {
 		printf("vmm_alloc_page: in second if\n");
 		return NULL; // page is all ready present at the reqested address
 	}

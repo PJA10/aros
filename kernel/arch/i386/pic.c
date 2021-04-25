@@ -42,7 +42,7 @@ void PIC_remap(int offset1, int offset2)
 
 void PIC_sendEOI(unsigned char irq)
 {
-	if(irq >= 8)
+	if (irq >= 8)
 		outb(PIC2_COMMAND,PIC_EOI);
 
 	outb(PIC1_COMMAND,PIC_EOI);
@@ -54,7 +54,7 @@ void IRQ_set_mask(unsigned char IRQline) {
 	uint16_t port;
 	uint8_t value;
 
-	if(IRQline < 8) {
+	if (IRQline < 8) {
 		port = PIC1_DATA;
 	} else {
 		port = PIC2_DATA;
@@ -68,7 +68,7 @@ void IRQ_clear_mask(unsigned char IRQline) {
 	uint16_t port;
 	uint8_t value;
 
-	if(IRQline < 8) {
+	if (IRQline < 8) {
 		port = PIC1_DATA;
 	} else {
 		port = PIC2_DATA;

@@ -19,7 +19,7 @@ void init_serial() {
 	outb(PORT + 0, 0xAE);    // Test serial chip (send byte 0xAE and check if serial returns same byte)
 
 	// Check if serial is faulty (i.e: not same byte as sent)
-	if(inb(PORT + 0) != 0xAE) {
+	if (inb(PORT + 0) != 0xAE) {
 		return;
 	}
 
