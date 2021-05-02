@@ -4,8 +4,10 @@
 
 #include <driver/tty.h>
 #include <driver/serial.h>
+#include <driver/ata.h>
 
 #include <kernel/mm.h>
+#include <kernel/fat.h>
 
 
 /*
@@ -30,7 +32,8 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
 	printf("kernel main start\n");
 	mm_init(mbd, magic);
 	ata_init(0);
-	ata_init(1);
+	printf("---------------------------------------------\n");
+	fat_init();
 	printf("kernel main finished, hlting\n");
 	for(;;) {
 		asm("hlt");
