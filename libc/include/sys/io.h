@@ -3,6 +3,28 @@
 
 #include <stdint.h>
 
+
+/* TODO: add support for INS and OUTS and REP
+"The processor’s I/O instructions provide access to I/O ports through the I/O address space. (These instructions
+cannot be used to access memory-mapped I/O ports.) There are two groups of I/O instructions:
+• Those that transfer a single item (byte, word, or doubleword) between an I/O port and a general-purpose
+register
+• Those that transfer strings of items (strings of bytes, words, or doublewords) between an I/O port and memory
+The register I/O instructions IN (input from I/O port) and OUT (output to I/O port) move data between I/O ports
+and the EAX register (32-bit I/O), the AX register (16-bit I/O), or the AL (8-bit I/O) register. The address of the I/O
+port can be given with an immediate value or a value in the DX register.
+The string I/O instructions INS (input string from I/O port) and OUTS (output string to I/O port) move data
+between an I/O port and a memory location. The address of the I/O port being accessed is given in the DX register;
+the source or destination memory address is given in the DS:ESI or ES:EDI register, respectively.
+When used with the repeat prefix REP, the INS and OUTS instructions perform string (or block) input or output
+operations. The repeat prefix REP modifies the INS and OUTS instructions to transfer blocks of data between an I/O
+port and memory. Here, the ESI or EDI register is incremented or decremented (according to the setting of the DF
+flag in the EFLAGS register) after each byte, word, or doubleword is transferred between the selected I/O port and
+memory.
+See the references for IN, INS, OUT, and OUTS in Chapter 3 and Chapter 4 of the Intel® 64 and IA-32 Architectures
+Software Developer’s Manual, Volumes 2A & 2B, for more information on these instructions."
+- ntel® 64 and IA-32 Architectures Software Developer’s Manual, Volume 1: Basic Architecture
+*/
 static inline void outb(uint16_t port, uint8_t val)
 {
     asm volatile ( "outb %0, %1" : : "a"(val), "Nd"(port) );

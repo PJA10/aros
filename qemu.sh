@@ -4,5 +4,6 @@ set -e
 
 DEBUG_FILE="debug-logs.txt"
 
-qemu-system-$(./target-triplet-to-arch.sh $HOST) -monitor telnet:127.0.0.1:1234,server,nowait -vnc :1 -serial stdio -no-reboot -drive file=fs.img,media=disk,index=0,if=ide,format=raw -cdrom aros.iso | tee $DEBUG_FILE
+cp fat16_disk_images/MSX_50M.img fat16_disk_images/MSX_50M-cp.img
+qemu-system-$(./target-triplet-to-arch.sh $HOST) -monitor telnet:127.0.0.1:1234,server,nowait -serial stdio -no-reboot -drive file=fat16_disk_images/MSX_50M-cp.img,media=disk,index=1,if=ide,format=raw -drive file=aros.iso,format=raw | tee $DEBUG_FILE
 #-d int

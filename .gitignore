@@ -1,4 +1,5 @@
 *.iso
 isodir
 sysroot
+.vscode
 debug-logs.txt
