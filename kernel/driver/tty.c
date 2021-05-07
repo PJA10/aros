@@ -1,11 +1,12 @@
+#include "vga.h"
+
 #include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <string.h>
 
 #include <driver/tty.h>
 
-#include "vga.h"
+static void terminal_putentryat(unsigned char c, uint8_t color, size_t x, size_t y);
+static void terminal_scrollraw();
 
 static const size_t VGA_WIDTH = 80;
 static const size_t VGA_HEIGHT = 25;
@@ -28,31 +29,6 @@ void terminal_initialize(void) {
 		}
 	}
 }
-
-void terminal_setcolor(uint8_t color) {
-	terminal_color = color;
-}
-
-void terminal_putentryat(unsigned char c, uint8_t color, size_t x, size_t y) {
-	const size_t index = y * VGA_WIDTH + x;
-	terminal_buffer[index] = vga_entry(c, color);
-}
-
-void terminal_scrollraw()
-{
-        for (size_t y = 0; y < VGA_HEIGHT; y++) {
-                for (size_t x = 0; x < VGA_WIDTH; x++) {
-                        const size_t index = y * VGA_WIDTH + x;
-                        if (y < VGA_HEIGHT - 1)
-                                terminal_buffer[index] = terminal_buffer[index + VGA_WIDTH];
-                        else
-                                terminal_buffer[index] = vga_entry(' ', terminal_color);
-                }
-        }
-        terminal_row = VGA_HEIGHT - 1;
-        terminal_column = 0;
-}
-
 
 void terminal_putchar(char c) {
 	unsigned char uc = c;
@@ -79,4 +55,27 @@ void terminal_write(const char* data, size_t size) {
 
 void terminal_writestring(const char* data) {
 	terminal_write(data, strlen(data));
+}
+
+void terminal_setcolor(uint8_t color) {
+	terminal_color = color;
+}
+
+static void terminal_putentryat(unsigned char c, uint8_t color, size_t x, size_t y) {
+	const size_t index = y * VGA_WIDTH + x;
+	terminal_buffer[index] = vga_entry(c, color);
+}
+
+static void terminal_scrollraw() {
+        for (size_t y = 0; y < VGA_HEIGHT; y++) {
+                for (size_t x = 0; x < VGA_WIDTH; x++) {
+                        const size_t index = y * VGA_WIDTH + x;
+                        if (y < VGA_HEIGHT - 1)
+                                terminal_buffer[index] = terminal_buffer[index + VGA_WIDTH];
+                        else
+                                terminal_buffer[index] = vga_entry(' ', terminal_color);
+                }
+        }
+        terminal_row = VGA_HEIGHT - 1;
+        terminal_column = 0;
 }

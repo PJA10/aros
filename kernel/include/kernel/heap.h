@@ -1,20 +1,10 @@
 #ifndef KERNEL_HEAP_H
 #define KERNEL_HEAP_H
+
+#include <stdint.h>
 #include <stddef.h>
 
-#define NALLOC 1024 // minimum #units morecore can request
-
-typedef union header { // block header
-	struct {
-		union header *ptr; // next block if on free list
-		uint32_t size; // size of this block
-	} s;
-	max_align_t x; // force alignment of blocks
-} Header;
-
-void *adv_kmalloc(uint32_t nbytes, int align, uint32_t *phys);
 void adv_kmalloc_init();
-void adv_kfree(void *addr);
 
 void *kmalloc_internal(uint32_t sz, int align, uint32_t *phys);
 void *kmalloc_a(uint32_t sz);  // page aligned

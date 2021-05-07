@@ -1,9 +1,34 @@
-#include <sys/io.h>
-#include <stdio.h>
 #include <driver/ata.h>
-#include <stdint.h>
+
+#include <sys/io.h>
+
 #include <kernel/heap.h>
+
+#include <stdio.h>
 #include <string.h>
+
+#define REG_DATA 0
+#define REG_SEC_COUNT 2
+#define REG_LBA_LO 3
+#define REG_LBA_MID 4
+#define REG_LBA_HI 5
+#define REG_DEVSEL 6
+#define REG_STATUS 7
+#define REG_COMMAND 7
+
+#define IDENTIFY_COMMAND 0xEC
+#define READ_COMMAND 0x20
+#define READ_MULTIPLE_COMMAND 0xc4
+#define WRITE_COMMAND 0x30
+#define WRITE_MULTIPLE_COMMAND 0xc5
+#define CACHE_FLUSH_COMMAND 0xe7
+
+#define ERR 1
+#define DRQ 8
+#define DF 0x20
+#define BSY 0x80
+
+static void ata_read_write(int LBA, int slavebit, void *buffer, int sector_count, int write);
 
 static int io_base;
 static int ctl_base;
@@ -63,7 +88,7 @@ int ata_init(int slavebit) {
 	int active_UDMA_mode = identify_data[88] & 0xFF00;
 	int conductor_80_cable = identify_data[93] & 0x800;
 	uint32_t num_LBA28_sectors = (identify_data[61] << 16) | identify_data[60];
-	uint64_t num_LBA48_sectors = (identify_data[103] << 48) | (identify_data[102] << 32) | (identify_data[101] << 16) | identify_data[100];
+	uint64_t num_LBA48_sectors = ((uint64_t)identify_data[103] << 48) | ((uint64_t)identify_data[102] << 32) | (identify_data[101] << 16) | identify_data[100];
 	
 	// debug
 	// printf("IDENTIFY info:\n");
@@ -72,7 +97,6 @@ int ata_init(int slavebit) {
 	// printf("conductor_80_cable: %d\n", conductor_80_cable);
 	// printf("num_LBA28_sectors: 0x%x\n", num_LBA28_sectors);
 	// printf("num_LBA48_sectors: 0x%x << 32 | 0x%x\n", (int) (num_LBA48_sectors >> (32)), (int)(num_LBA48_sectors << 32 >> 32));
-	
 	return 0;
 }
 
@@ -84,7 +108,7 @@ void ata_write(int sector_num, int slavebit, void *buffer, int sector_count) {
 	ata_read_write(sector_num, slavebit, buffer, sector_count, 1);
 }
 
-void ata_read_write(int LBA, int slavebit, void *buffer, int sector_count, int write) {
+static void ata_read_write(int LBA, int slavebit, void *buffer, int sector_count, int write) {
 	if (sector_count > 256) {
 		return;
 	} else if (sector_count == 256) {
