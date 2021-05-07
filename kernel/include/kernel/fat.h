@@ -1,6 +1,7 @@
 #ifndef _KERNEL_FAT_H
 #define _KERNEL_FAT_H
 
+#include <stddef.h>
 
 typedef struct fat_extBS_32
 {
@@ -37,7 +38,7 @@ typedef struct fat_BS
 {
 	unsigned char 		bootjmp[3];
 	unsigned char 		oem_name[8];
-	unsigned short 	        bytes_per_sector;
+	unsigned short 	    bytes_per_sector;
 	unsigned char		sectors_per_cluster;
 	unsigned short		reserved_sector_count;
 	unsigned char		table_count;
@@ -55,10 +56,25 @@ typedef struct fat_BS
  
 }__attribute__((packed)) fat_BS_t;
 
+
+typedef struct fat_file {
+    char *path;
+    char *name;
+    int size;
+    int first_cluster_num;
+    int is_folder;
+	int curr_cluster_num;
+	int pos_in_cluster;
+	int eof;
+} fat_file_t;
+
 enum FAT_TYPE {FAT12, FAT16, FAT32, ExFAT};
 
 void fat_init();
-int fat16_get_next_cluster(int active_cluster);
+void print_fat_file_metadata(fat_file_t *file);
 
+fat_file_t *fat_open(char *path);
+int fat_read(fat_file_t *file, char *buf, int size);
+void fat_close(fat_file_t *file);
 
 #endif
