@@ -8,6 +8,8 @@
 #include <string.h>
 
 #define REG_DATA 0
+#define REG_ALT_STATUS 0
+#define REG_ERR 1
 #define REG_SEC_COUNT 2
 #define REG_LBA_LO 3
 #define REG_LBA_MID 4
@@ -26,6 +28,7 @@
 #define ERR 1
 #define DRQ 8
 #define DF 0x20
+#define RDY 0x40
 #define BSY 0x80
 
 static void ata_read_write(int LBA, int slavebit, void *buffer, int sector_count, int write);
@@ -114,6 +117,8 @@ static void ata_read_write(int LBA, int slavebit, void *buffer, int sector_count
 	} else if (sector_count == 256) {
 		sector_count = 0; // 0 represnts 256 sectors
 	}
+	while (inb(io_base + REG_STATUS) & BSY)
+	; // Wait for BSY to be zero.
 	
 	outb(io_base + REG_DEVSEL, 0xE0 | (slavebit << 4) | ((LBA >> 24) & 0x0F));
 	outb(io_base + REG_SEC_COUNT, (unsigned char) sector_count);
@@ -124,7 +129,7 @@ static void ata_read_write(int LBA, int slavebit, void *buffer, int sector_count
 	if (write) {
 		cmd = (sector_count == 1) ? WRITE_COMMAND :  WRITE_MULTIPLE_COMMAND;
 	}
-	
+	//printf("cmd: 0x%x, LBA: %d, buffer: 0x%x, sector_count: %d\n", cmd, LBA, buffer, sector_count);
 	outb(io_base + REG_COMMAND, cmd);
 
 	if (sector_count == 0) {
@@ -133,20 +138,19 @@ static void ata_read_write(int LBA, int slavebit, void *buffer, int sector_count
 	int status;
 	uint16_t *b = buffer;
 	for (int j = 0; j < sector_count; j++) {
-		if (j > 0) {
-			// wait 400ns, let the controller empty/fill its buffer to/from the drive
-			for (int i = 0; i < 15; i++) {
-				status = inb(io_base + REG_STATUS);
-			}
+		for (int i = 0; i < 4; i++) {
+			status = inb(ctl_base + REG_ALT_STATUS);
+			//printf("ata read_write polling 400ms delay status=0x%x drive=%d j=%d LBA: %d\n", status, slavebit, j, LBA);
 		}
-		
+
 		while ((((status = inb(io_base + REG_STATUS)) & BSY) || !(status & DRQ)) && !(status & ERR) && !(status & DF)) {
 			// debug
-			//printf("ata read waiting for DRQ or ERR status=0x%x drive=%d j=%d\n", status, slavebit, j);
+			//printf("ata read_write waiting for DRQ or ERR status=0x%x drive=%d j=%d LBA: %d\n", status, slavebit, j, LBA);
 		}
 
 		if ((status & ERR) || (status & DF)) {
 			printf("error in reading/writing %d sectors from LBA 0x%x in drive %d\n", sector_count, slavebit, slavebit);
+			return;
 		}
 		for (int i = 0; i < 256; i++, b++) {
 			if (write) {

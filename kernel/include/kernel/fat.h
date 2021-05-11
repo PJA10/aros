@@ -75,6 +75,8 @@ void print_fat_file_metadata(fat_file_t *file);
 
 fat_file_t *fat_open(char *path);
 int fat_read(fat_file_t *file, char *buf, int size);
+int fat_write(fat_file_t *file, char *buf, int size);
 void fat_close(fat_file_t *file);
+void seek_start(fat_file_t *file);
 
 #endif
