@@ -73,7 +73,7 @@ int ata_init(int slavebit) {
 	// TODO: add support to "Command Aborted"
 	while (!((status = inb(io_base + REG_STATUS)) & DRQ) && !(status & ERR)) { 
 		// debug
-		printf("ata init waiting for DRQ or ERR status=0x%x\n", status);
+		//printf("ata init waiting for DRQ or ERR status=0x%x\n", status);
 	}
 
 	if (status & ERR) {
@@ -129,7 +129,6 @@ static void ata_read_write(int LBA, int slavebit, void *buffer, int sector_count
 	if (write) {
 		cmd = (sector_count == 1) ? WRITE_COMMAND :  WRITE_MULTIPLE_COMMAND;
 	}
-	//printf("cmd: 0x%x, LBA: %d, buffer: 0x%x, sector_count: %d\n", cmd, LBA, buffer, sector_count);
 	outb(io_base + REG_COMMAND, cmd);
 
 	if (sector_count == 0) {
@@ -140,7 +139,6 @@ static void ata_read_write(int LBA, int slavebit, void *buffer, int sector_count
 	for (int j = 0; j < sector_count; j++) {
 		for (int i = 0; i < 4; i++) {
 			status = inb(ctl_base + REG_ALT_STATUS);
-			//printf("ata read_write polling 400ms delay status=0x%x drive=%d j=%d LBA: %d\n", status, slavebit, j, LBA);
 		}
 
 		while ((((status = inb(io_base + REG_STATUS)) & BSY) || !(status & DRQ)) && !(status & ERR) && !(status & DF)) {

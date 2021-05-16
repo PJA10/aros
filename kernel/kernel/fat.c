@@ -70,18 +70,6 @@ void fat_init() {
         fat_type = ExFAT;
         printf("fat_type: ExFAT - unsupported!!!!!!!!\n");
     }
-    printf("first_root_dir_sector: %d\n", first_root_dir_sector);
-    printf("first_data_sector: %d\n", first_data_sector);
-    printf("root_dir_sectors: %d\n", root_dir_sectors);
-    printf("first_root_dir_cluster: %d\n", first_root_dir_cluster);
-    for (size_t i = 0; i < 40; i++)
-    {
-        printf("fat16_get_next_cluster(%d) = %d - %d      ", i, fat16_get_next_cluster(i), ((i - 2) * fat_boot->sectors_per_cluster) + first_data_sector);
-        if (i % 2 == 0) {
-            printf("\n");
-        }
-    }
-    
 }
 
 int fat_read(fat_file_t *file, char *buf, int size) {
@@ -89,7 +77,6 @@ int fat_read(fat_file_t *file, char *buf, int size) {
     while (left_to_read) {
         int cluster_num = file->curr_cluster_num;
         int next_cluster = fat16_get_next_cluster(cluster_num);
-        //printf("file: %s at curr_cluster_num: %d, pos_in_cluster: %d left_to_read: %d\n", file->name, file->curr_cluster_num, file->pos_in_cluster, left_to_read);
         unsigned char cluster[fat_boot->bytes_per_sector * fat_boot->sectors_per_cluster];
         fat_read_cluster(cluster_num, cluster);
         int min = fat_boot->bytes_per_sector * fat_boot->sectors_per_cluster - file->pos_in_cluster;
@@ -102,7 +89,6 @@ int fat_read(fat_file_t *file, char *buf, int size) {
         memcpy(buf, cluster + file->pos_in_cluster, min);
         left_to_read -= min;
         buf += min;
-        //printf("file->pos_in_cluster: %d, min: %d\n", file->pos_in_cluster, min);
         file->pos_in_cluster = (file->pos_in_cluster + min) % (fat_boot->bytes_per_sector * fat_boot->sectors_per_cluster);
 
         if (next_cluster == -1 && file->pos_in_cluster == file->size % (fat_boot->bytes_per_sector * fat_boot->sectors_per_cluster)) {
@@ -110,7 +96,6 @@ int fat_read(fat_file_t *file, char *buf, int size) {
             break;
         }
         if (file->pos_in_cluster == 0) {
-            //printf("(file->pos_in_cluster == 0)\n");
             file->curr_cluster_num = next_cluster;
         }
     }
@@ -121,7 +106,6 @@ int fat_write(fat_file_t *file, char *buf, int size) {
     int left_to_write = size;
     while (left_to_write) {
         int cluster_num = file->curr_cluster_num;
-        //printf("file: %s at curr_cluster_num: %d, pos_in_cluster: %d left_to_write: %d\n", file->name, file->curr_cluster_num, file->pos_in_cluster, left_to_write);
         if (file->pos_in_cluster == 0 && left_to_write >= fat_boot->bytes_per_sector * fat_boot->sectors_per_cluster) {
             fat_write_cluster(cluster_num, (unsigned char *)buf);
             buf += fat_boot->bytes_per_sector * fat_boot->sectors_per_cluster;
@@ -134,9 +118,7 @@ int fat_write(fat_file_t *file, char *buf, int size) {
                 min = left_to_write;
             }
             memcpy(cluster + file->pos_in_cluster, buf, min);
-            //printf("writing: %s\n", cluster);
             fat_write_cluster(cluster_num, cluster);
-            //printf("here\n");
 
             left_to_write -= min;
             buf += min;
@@ -144,7 +126,6 @@ int fat_write(fat_file_t *file, char *buf, int size) {
         }
 
         int next_cluster = fat16_get_next_cluster(cluster_num);
-        //printf("next_cluster: %d, file->pos_in_cluster: %d\n", next_cluster, file->pos_in_cluster);
         if (next_cluster == -1) { // last allocted claster
             // then we changed the size of the file
             int was_written = file->size % (fat_boot->bytes_per_sector * fat_boot->sectors_per_cluster);
@@ -190,9 +171,6 @@ fat_file_t *fat_open(char *path) {
             p++;
         }
         *p = 0;
-        // debug
-        //print_fat_file_metadata(curr_dir);
-        //printf("fat_open: curr_file_name=%s\n\n", curr_file_name);
         fat_file_t *next_dir = fat_parse_dir(curr_dir, curr_file_name);
         free_fat_file(curr_dir);
         if (next_dir == NULL) {
@@ -258,7 +236,6 @@ static fat_file_t *fat_parse_dir(fat_file_t *dir, char *search_name) {
                 file->curr_cluster_num = file->first_cluster_num;
                 file->is_folder = (entry[11] == 0x10);
             }
-            //printf("file name: %s     first cluster number: %d    file_size: %d\n", file_name, file_first_cluster_number, file_size);
 endloop:
             entry += 32;
             continue;

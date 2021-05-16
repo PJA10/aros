@@ -46,29 +46,6 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
 }
 
 static void fat_demo() {
-	// char str[20];
-	// for (size_t i = 0; i < 100; i++)
-	// {
-	// 	itoa(i, str, 10);
-	// 	char file_name[20] = "/";
-	// 	strcpy(file_name + 1, str);
-	// 	strcpy(file_name + 1 + strlen(str), ".TXT");
-	// 	fat_file_t *file = fat_open(file_name);
-	// 	if (file == NULL) {
-	// 		printf("error in opening\n");
-	// 	}
-	// 	else {
-	// 		char c[1024];
-	// 		while(file->eof != 1) {
-	// 			if(fat_read(file, c, 1024) == -1) {
-	// 				printf("error in reading\n");
-	// 			}
-	// 			printf("%s", c);
-	// 		}
-	// 		printf("\n");
-	// 		fat_close(file);
-	// 	}
-	// }
     fat_file_t *aviv_file = fat_open("/20.TXT");
 	if (aviv_file == NULL) {
 		printf("error in opening\n");
