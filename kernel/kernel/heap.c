@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include <kernel/heap.h>
 #include <arch-i386/paging.h>
@@ -44,10 +45,23 @@ void set_kfree( void (*func_p)(void *addr)) {
 }
 
 
+#define NALLOC 1024 // minimum #units morecore can request
+
+typedef union header { // block header
+	struct {
+		union header *ptr; // next block if on free list
+		uint32_t size; // size of this block
+	} s;
+	max_align_t x; // force alignment of blocks
+} Header;
 
 static Header base; // empry list to get started
 static Header *freep = NULL; // start of free list
 static uint32_t end_of_kernel_heap; // address of the end of the heap
+
+static Header *morecore(uint32_t nu);
+static void *adv_kmalloc(uint32_t nbytes, int align, uint32_t *phys);
+static void adv_kfree(void *ap);
 
 /*
  * this function ask the system for more memoty.
@@ -78,7 +92,7 @@ static Header *morecore(uint32_t nu) {
 /*
  * this function is the kernel general-purposr storage allocator
  */
-void *adv_kmalloc(uint32_t nbytes, int align, uint32_t *phys) {
+static void *adv_kmalloc(uint32_t nbytes, int align, uint32_t *phys) {
 	Header *p, *prevp;
 	uint32_t nunits;
 
@@ -114,7 +128,11 @@ void *adv_kmalloc(uint32_t nbytes, int align, uint32_t *phys) {
 /*
  * this function puts a given block in the free list
  */
-void adv_kfree(void *ap) {
+static void adv_kfree(void *ap) {
+	if (ap == NULL) {
+		printf("kfree was called with null\n");
+		return;
+	}
 	Header *bp, *p;
 
 	bp = (Header *) ap - 1; // point to block header

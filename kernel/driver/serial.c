@@ -3,10 +3,12 @@
 
 #define PORT 0x3f8   /* COM1 */	
 
+static int is_transmit_empty();
+static int serial_received();
+
 /*
  * TODO: add  support for multiple serial ports and serial port address detection
  */
-
 void init_serial() {
 	outb(PORT + 1, 0x00);    // Disable all interrupts
 	outb(PORT + 3, 0x80);    // Enable DLAB (set baud rate divisor)
@@ -19,26 +21,13 @@ void init_serial() {
 	outb(PORT + 0, 0xAE);    // Test serial chip (send byte 0xAE and check if serial returns same byte)
 
 	// Check if serial is faulty (i.e: not same byte as sent)
-	if(inb(PORT + 0) != 0xAE) {
+	if (inb(PORT + 0) != 0xAE) {
 		return;
 	}
 
 	// If serial is not faulty set it in normal operation mode
 	// (not-loopback with IRQs enabled and OUT#1 and OUT#2 bits enabled)
 	outb(PORT + 4, 0x0F);
-}
-
-int serial_received() {
-	return inb(PORT + 5) & 1;
-}
-
-char read_serial() {
-	while (serial_received() == 0);
-	return inb(PORT);
-}
-
-int is_transmit_empty() {
-	return inb(PORT + 5) & 0x20;
 }
 
 void write_serial(char a) {
@@ -51,4 +40,17 @@ void str_write_serial(char *str) {
 		write_serial(*str);
 		str++;
 	}
+}
+
+char read_serial() {
+	while (serial_received() == 0);
+	return inb(PORT);
+}
+
+static int serial_received() {
+	return inb(PORT + 5) & 1;
+}
+
+static int is_transmit_empty() {
+	return inb(PORT + 5) & 0x20;
 }

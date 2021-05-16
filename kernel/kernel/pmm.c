@@ -1,19 +1,36 @@
-#include <kernel/multiboot.h>
 #include <kernel/pmm.h>
 #include <kernel/heap.h>
 
 #include <string.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
+// Macros used in the bitset algorithms.
+#define INDEX_FROM_BIT(a) (a/(8*4))
+#define OFFSET_FROM_BIT(a) (a%(8*4))
 
 static uint32_t placement_address;
 static uint32_t *bitmap;
 static uint32_t bitmap_size;
 static uint32_t next_free_frame;
 
+
+static void handle_mmap_entries_overlap(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t mmap_length);
+static uint32_t combine_mmap_entries(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t mmap_length);
+static void sort_mmap(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t mmap_length);
+static void swap_mmap_entries(mmap_entry_t* first_entry, mmap_entry_t* second_entry);
+static void update_mmap_enrty(mmap_entry_t* entry, uint64_t base_addr, uint64_t length);
+static void mmap_clear_unrecognised(mmap_entry_t *entry, uint32_t mmap_addr, uint32_t mmap_length);
+static void print_mmap(mmap_entry_t *entry, uint32_t mmap_addr, uint32_t mmap_length);
+static mmap_entry_t *get_next_mmap_entry(mmap_entry_t *entry);
+static int mmap_get_page_type(multiboot_info_t* mbd, uint32_t page_addr);
+static void bitmap_clear_bit(uint32_t bit);
+static void bitmap_set_bit(uint32_t bit);
+static uint32_t bitmap_test_bit(uint32_t bit);
+static void bitmap_init(uint32_t highest_free_address, multiboot_info_t* mbd);
+static void fix_memory_map(multiboot_info_t* mbd, unsigned int magic);
+static void *early_kmalloc(uint32_t sz, int align, uint32_t *phys);
 
 void pmm_init(multiboot_info_t* mbd, unsigned int magic) {
 	// convert multiboot info address to virutal address cz paging in on
@@ -34,18 +51,6 @@ void pmm_init(multiboot_info_t* mbd, unsigned int magic) {
 	bitmap = kmalloc(bitmap_size);
 	memset(bitmap, 0xFF, bitmap_size);
 	bitmap_init(highest_free_addr, mbd);
-	/*
-	//debug
-	printf("\nbitmap:\n");
-	int k = 4;
-	for (int i = 0; i < 35; i++) {
-		for (int j = 0; j < k; j++) {
-			printf("%x: %x | ",(k*i+j)*8*4*PAGE_SIZE, bitmap[i*k + j]);
-		}
-		printf("\n");
-	}
-	printf("\n");
-	*/
 }
 
 uint32_t pmm_allocate_frame() {
@@ -70,11 +75,9 @@ void free_frame(uint32_t frame) {
 }
 
 /*
- *
  * This function set the bitmap bits that represent free ram pages as free.
- *
  */
-void bitmap_init(uint32_t highest_free_address, multiboot_info_t* mbd) {
+static void bitmap_init(uint32_t highest_free_address, multiboot_info_t* mbd) {
 	uint32_t mbd_phys_start_addr = (uint32_t) mbd - KERNEL_VIRTUAL_BASE;
 	uint32_t mbd_phys_end_addr = mbd_phys_start_addr + sizeof(multiboot_info_t);
 
@@ -107,26 +110,24 @@ void bitmap_init(uint32_t highest_free_address, multiboot_info_t* mbd) {
 		next_free_frame++;
 }
 
-void bitmap_clear_bit(uint32_t bit) {
+static void bitmap_clear_bit(uint32_t bit) {
 	bitmap[INDEX_FROM_BIT(bit)] -= (1 << OFFSET_FROM_BIT(bit));
 }
 
-void bitmap_set_bit(uint32_t bit) {
+static void bitmap_set_bit(uint32_t bit) {
 	bitmap[INDEX_FROM_BIT(bit)] |= (1 << OFFSET_FROM_BIT(bit));
 }
 
-uint32_t bitmap_test_bit(uint32_t bit) {
+static uint32_t bitmap_test_bit(uint32_t bit) {
 	return ((bitmap[INDEX_FROM_BIT(bit)] >> OFFSET_FROM_BIT(bit)) & 1);
 }
 
 
 /*
- *
  * This functuin gets a page address and returns its memory type as discribed by the mmap.
  * if the page is not in its entirety in one mmap area then the returned type will bt MULTIBOOT_MEMORY_RESERVED.
- *
  */
-int mmap_get_page_type(multiboot_info_t* mbd, uint32_t page_addr) {
+static int mmap_get_page_type(multiboot_info_t* mbd, uint32_t page_addr) {
 	uint32_t page_end_addr = page_addr + PAGE_SIZE;
 	mmap_entry_t *entry = (mmap_entry_t *)mbd->mmap_addr;
 
@@ -160,7 +161,7 @@ int mmap_get_page_type(multiboot_info_t* mbd, uint32_t page_addr) {
  * The allocator is a WaterMark allocator which just keep track of how far you've allocated and forget about the notion of "freeing".
  *
  */
-void *early_kmalloc(uint32_t sz, int align, uint32_t *phys) {
+static void *early_kmalloc(uint32_t sz, int align, uint32_t *phys) {
 	if (align == 1 && (placement_address & 0xFFFFF000)) // If the address is not already page-aligned
 	{
 		// Align it.
@@ -186,7 +187,7 @@ void *early_kmalloc(uint32_t sz, int align, uint32_t *phys) {
  * The fuicntion will clear unrecognised entry type, sort the mmap, fix mmap overlaps and combine entires if needed.
  *
  */
-void fix_memory_map(multiboot_info_t* mbd, unsigned int magic) {
+static void fix_memory_map(multiboot_info_t* mbd, unsigned int magic) {
         if (magic != MULTIBOOT_BOOTLOADER_MAGIC)
         {
                 printf("Invalid magic number: 0x%x\n",  magic);
@@ -217,7 +218,7 @@ void fix_memory_map(multiboot_info_t* mbd, unsigned int magic) {
  * @param entry  - the head entry of the *sorted(!)* memory map (without overlapping entries)
  *
  */
-uint32_t combine_mmap_entries(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t mmap_length) {
+static uint32_t combine_mmap_entries(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t mmap_length) {
 	mmap_entry_t* next = get_next_mmap_entry(entry);
 	while((uint32_t) next < mmap_addr + mmap_length) {
 		if (entry-> type != next->type) {
@@ -265,7 +266,7 @@ uint32_t combine_mmap_entries(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t 
  * @param entry - the head entry of the *sorted(!)* memory map
  *
  */
-void handle_mmap_entries_overlap(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t mmap_length) {
+static void handle_mmap_entries_overlap(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t mmap_length) {
 	mmap_entry_t* next = get_next_mmap_entry(entry);
 	while((uint32_t) next < mmap_addr + mmap_length) {
                 uint64_t entry_base_addr = ((uint64_t) entry->base_addr_high << 32) | entry->base_addr_low;
@@ -304,7 +305,7 @@ void handle_mmap_entries_overlap(mmap_entry_t* entry, uint32_t mmap_addr, uint32
 }
 
 
-void update_mmap_enrty(mmap_entry_t* entry, uint64_t base_addr, uint64_t length){
+static void update_mmap_enrty(mmap_entry_t* entry, uint64_t base_addr, uint64_t length){
 	entry->base_addr_high = (uint32_t) (base_addr >> 32);
 	entry->base_addr_low = (uint32_t) base_addr - ((uint64_t)entry->base_addr_high << 32);
 	entry->length_high = (uint32_t) (length >> 32);
@@ -320,7 +321,7 @@ void update_mmap_enrty(mmap_entry_t* entry, uint64_t base_addr, uint64_t length)
  * the functon will find the needed entry and swap it to place
  *
  */
-void sort_mmap(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t mmap_length) {
+static void sort_mmap(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t mmap_length) {
 	while((uint32_t) entry < mmap_addr + mmap_length)  {
 		uint64_t correct_base_addr = ((uint64_t) entry->base_addr_high << 32) | entry->base_addr_low;
 		mmap_entry_t* correct_entry = entry;
@@ -340,7 +341,7 @@ void sort_mmap(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t mmap_length) {
         }
 }
 
-void swap_mmap_entries(mmap_entry_t* first_entry, mmap_entry_t* second_entry) {
+static void swap_mmap_entries(mmap_entry_t* first_entry, mmap_entry_t* second_entry) {
 	multiboot_memory_map_t tmp;
 	multiboot_memory_map_t* tmp_p = &tmp;
 	tmp_p->base_addr_low = second_entry->base_addr_low;
@@ -362,7 +363,7 @@ void swap_mmap_entries(mmap_entry_t* first_entry, mmap_entry_t* second_entry) {
 	first_entry->type = tmp_p->type;
 }
 
-void mmap_clear_unrecognised(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t mmap_length) {
+static void mmap_clear_unrecognised(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t mmap_length) {
         while((uint32_t) entry < mmap_addr + mmap_length)  {
                 if (entry->type > MULTIBOOT_MEMORY_BADRAM) {
                         entry->type = MULTIBOOT_MEMORY_RESERVED;
@@ -372,7 +373,7 @@ void mmap_clear_unrecognised(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t m
 }
 
 
-void print_mmap(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t mmap_length) {
+static void print_mmap(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t mmap_length) {
 	printf("\nmemory map:\n");
 	while((uint32_t) entry < mmap_addr + mmap_length)  {
 		printf("base addr: 0x%x%x, length: 0x%x%x, type: 0x%x\n", entry->base_addr_high, entry->base_addr_low, entry->length_high, entry->length_low, entry->type);
@@ -380,6 +381,6 @@ void print_mmap(mmap_entry_t* entry, uint32_t mmap_addr, uint32_t mmap_length) {
 	}
 }
 
-mmap_entry_t* get_next_mmap_entry(mmap_entry_t* entry) {
+static mmap_entry_t* get_next_mmap_entry(mmap_entry_t* entry) {
 	return (mmap_entry_t*) ((uint32_t) entry + entry->size + sizeof(entry->size));
 }

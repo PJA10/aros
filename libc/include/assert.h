@@ -3,7 +3,7 @@
 
 #define ASSERT( exp )\
 ({\
-        if(!exp) {\
+        if (!exp) {\
                 printf("assert failed at %s:%d", __FILE__, __LINE__);\
                 printf(" inside %s\n", __FUNCTION__);\
                 abort();\

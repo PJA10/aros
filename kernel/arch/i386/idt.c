@@ -1,3 +1,4 @@
+#include <arch-i386/idt.h>
 #include <arch-i386/pic.h>
 #include <arch-i386/interrupt_handler.h>
 #include <sys/io.h>
@@ -10,31 +11,31 @@ struct IDT_entry{
 	unsigned short int offset_higherbits;
 };
 
-struct IDT_entry IDT[256];
+static struct IDT_entry IDT[256];
 
 void idt_init(void) {
-        extern int load_idt();
+	extern int load_idt();
 
 	unsigned long irq0_address;
-        unsigned long irq1_address;
-        unsigned long irq2_address;
-        unsigned long irq3_address;
-        unsigned long irq4_address;
-        unsigned long irq5_address;
-        unsigned long irq6_address;
-        unsigned long irq7_address;
-        unsigned long irq8_address;
-        unsigned long irq9_address;
-        unsigned long irq10_address;
-        unsigned long irq11_address;
-        unsigned long irq12_address;
-        unsigned long irq13_address;
-        unsigned long irq14_address;
-        unsigned long irq15_address;
+	unsigned long irq1_address;
+	unsigned long irq2_address;
+	unsigned long irq3_address;
+	unsigned long irq4_address;
+	unsigned long irq5_address;
+	unsigned long irq6_address;
+	unsigned long irq7_address;
+	unsigned long irq8_address;
+	unsigned long irq9_address;
+	unsigned long irq10_address;
+	unsigned long irq11_address;
+	unsigned long irq12_address;
+	unsigned long irq13_address;
+	unsigned long irq14_address;
+	unsigned long irq15_address;
 	unsigned long idt_address;
 	unsigned long idt_ptr[2];
 
-        PIC_remap(0x20, 0x28);
+	PIC_remap(0x20, 0x28);
 	IRQ_set_mask((unsigned char) 0); // mask timer timer interrupt
 	IRQ_clear_mask((unsigned char) 1); // unmask keybord interrupt
 
@@ -210,8 +211,6 @@ void idt_init(void) {
 	idt_address = (unsigned long)IDT ;
 	idt_ptr[0] = (sizeof (struct IDT_entry) * 256) + ((idt_address & 0xffff) << 16);
 	idt_ptr[1] = idt_address >> 16 ;
-
-
 
 	load_idt(idt_ptr);
 }

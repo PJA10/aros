@@ -1,5 +1,5 @@
-#include <arch-i386/pic.h>
 #include <arch-i386/interrupt_handler.h>
+#include <arch-i386/pic.h>
 
 #include <sys/io.h>
 
