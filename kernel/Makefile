@@ -54,6 +54,7 @@ $(LIBS) \
 $(ARCHDIR)/crtend.o \
 $(ARCHDIR)/crtn.o \
 
+
 .PHONY: all clean install install-headers install-kernel
 .SUFFIXES: .o .c .S
 
@@ -78,7 +79,7 @@ clean:
 	rm -f $(OBJS:.o=.d) *.d */*.d */*/*.d
 	rm -f aros.map
 
-install: install-headers install-kernel
+install: install-headers create-offsets-headers install-kernel
 
 install-headers:
 	mkdir -p $(DESTDIR)$(INCLUDEDIR)
@@ -87,5 +88,10 @@ install-headers:
 install-kernel: aros.kernel
 	mkdir -p $(DESTDIR)$(BOOTDIR)
 	cp aros.kernel $(DESTDIR)$(BOOTDIR)
+
+
+create-offsets-headers: 
+	$(CC) -c kernel/TCB_offsets.c $(CFLAGS) $(CPPFLAGS) -S -o - | gawk '($$1 == "->") { print "#define " $$2 " " substr($$3,2) }' > include/kernel/TCB_offsets.h
+	$(CC) -c arch/i386/tss_offsets.c $(CFLAGS) $(CPPFLAGS) -S -o - | gawk '($$1 == "->") { print "#define " $$2 " " substr($$3,2) }' > include/arch-i386/tss_offsets.h
 
 -include $(OBJS:.o=.d)

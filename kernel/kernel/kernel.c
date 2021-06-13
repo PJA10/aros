@@ -7,8 +7,11 @@
 #include <driver/serial.h>
 #include <driver/ata.h>
 
+#include <arch-i386/gdt.h>
+
 #include <kernel/mm.h>
 #include <kernel/fat.h>
+#include <kernel/thread.h>
 
 
 /*
@@ -27,15 +30,21 @@
  * keep in mind Code Structuring + Portability
  */
 
-static void fat_demo();
 
 void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
+	extern int switch_to_task();
 	terminal_initialize();
 	init_serial();
 	ata_init(0);
 	mm_init(mbd, magic);
 	fat_init();
 	printf("kernel main start\n");
+	init_multitasking();
+	TCB *second_thread = new_kernel_thread(thread_task2, "thread");
+	printf("starting switch\n");
+	switch_to_task(second_thread);
+	thread_task();
+
 	printf("kernel main finished, hlting\n");
 	for(;;) {
 		asm("hlt");

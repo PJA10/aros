@@ -44,4 +44,8 @@
                      SEG_LONG(0)     | SEG_SIZE(1) | SEG_GRAN(1) | \
                      SEG_PRIV(3)     | SEG_DATA_RDWR
 
+#define GDT_TSS      SEG_DESCTYPE(0) | SEG_PRES(1) | SEG_SAVL(0) | \
+                     SEG_LONG(0)     | SEG_SIZE(1) | SEG_GRAN(0) | \
+                     SEG_PRIV(0)     | SEG_CODE_EXA
+
 #endif

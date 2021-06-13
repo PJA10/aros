@@ -9,11 +9,22 @@ static uint64_t create_descriptor(uint32_t base, uint32_t limit, uint16_t flag);
 
 // TODO: (can be changed) use a global var of a new struct type to send the gdt ptr to load_gdt insted of the stack(which mabye isn't proporly seted up) - http://www.osdever.net/bkerndev/Docs/gdt.htm
 // TODO: Is the GDT still missing a TSS selector? - yes it does, we need it for interrupting from user space. It will point on the kernel's stack.
-
-static uint64_t GDT[5]; // each entry is 8 byte long
+static uint64_t GDT[6]; // each entry is 8 byte long
 
 void gdt_init(void) {
 	extern int load_gdt();
+	extern int load_tss();
+
+	tss.ss0 = 0x10;
+	// TODO: define tss.esp0 to the correct value
+	__asm__ __volatile__ (
+        "mov %%esp, %%eax\n\t"
+        "mov %%eax, %0\n\t"
+	: "=m" (tss.esp0)
+	: /* no input */
+	: "%eax"
+	);
+	//tss.iomap = sizeof(tss_t);
 
 	unsigned long gdt_address;
 	unsigned long gdt_ptr[2];
@@ -23,12 +34,14 @@ void gdt_init(void) {
 	GDT[2] = create_descriptor(0, 0x000FFFFF, (GDT_DATA_PL0));
 	GDT[3] = create_descriptor(0, 0x000FFFFF, (GDT_CODE_PL3));
 	GDT[4] = create_descriptor(0, 0x000FFFFF, (GDT_DATA_PL3));
+	GDT[5] = create_descriptor((uint32_t)&tss, sizeof(tss_t), (GDT_TSS));
 
 	gdt_address = (unsigned long)GDT;
-	gdt_ptr[0] = (sizeof (uint64_t) * 5) + ((gdt_address & 0xffff) << 16);
+	gdt_ptr[0] = (sizeof (GDT)) + ((gdt_address & 0xffff) << 16);
 	gdt_ptr[1] = gdt_address >> 16 ;
 
 	load_gdt(gdt_ptr);
+	load_tss();
 }
 
 static uint64_t create_descriptor(uint32_t base, uint32_t limit, uint16_t flag) {

@@ -138,13 +138,18 @@ fix_cs:
 	movl %eax, %ss
 	ret
 
+.global load_tss
+load_tss:
+	mov $0x2b, %ax  #The descriptor of the TSS in the GDT (e.g. 0x2b if the sixths entry in your GDT describes your TSS)
+	ltr %ax         #The actual load
+	ret
+
 .globl loadPageDirectory
 loadPageDirectory:
 	push %ebp
 	mov %esp, %ebp
 	mov 8(%esp), %eax
 	mov %eax, %cr3
-//	jmp .
 	mov %ebp, %esp
 	pop %ebp
 	ret

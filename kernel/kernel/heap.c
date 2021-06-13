@@ -12,7 +12,7 @@ static void (*curr_kfree_func)(void *addr);
 
 void *kmalloc_internal(uint32_t sz, int align, uint32_t *phys) {
 	//printf("in kmalloc_internal\n");
-        return (*curr_kmalloc_func)(sz, align, phys);
+    return (*curr_kmalloc_func)(sz, align, phys);
 }
 
 void *kmalloc_a(uint32_t sz) { // page aligned.
