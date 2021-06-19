@@ -4,7 +4,6 @@
 #include <kernel/thread.h>
 #include <arch-i386/gdt.h>
 
-TCB *current_task_TCB;
 
 void init_multitasking() {
     current_task_TCB = kmalloc(sizeof(TCB));
@@ -14,14 +13,15 @@ void init_multitasking() {
     current_task_TCB->state = RUNNING;
     current_task_TCB->pid = 1;
     current_task_TCB->ESP0 = tss.esp0;
+    current_task_TCB->next = current_task_TCB;
     strcpy(current_task_TCB->thread_name, "init");
 }
 
 // only support 1 new thread
 TCB *new_kernel_thread(void (*startingEIP)(), char *new_thred_name) {
-    
     static int i = 1;
-    static char another_kernel_stack[4096];
+    //static char another_kernel_stack[4096];
+    char *another_kernel_stack = kmalloc(4096);
     i += 1;
     TCB *new_thread = kmalloc(sizeof(TCB)); 
     uint32_t *new_kernel_stack = (uint32_t *)(&another_kernel_stack[4095]);
@@ -44,27 +44,29 @@ TCB *new_kernel_thread(void (*startingEIP)(), char *new_thred_name) {
     new_thread->state = READY;
     new_thread->pid = i;
     strcpy(new_thread->thread_name, new_thred_name);
-    current_task_TCB->next = new_thread;
-    new_thread->next = current_task_TCB; 
+    TCB *curr = current_task_TCB->next;
+    while (curr->next != current_task_TCB) {
+        curr = curr->next;
+    }
+    curr->next = new_thread;
+    new_thread->next = current_task_TCB;
+    
     printf("returning from new_kernel_thread, new_thread: 0x%x, current_task_TCB: 0x%x\n", new_kernel_stack, current_task_TCB);
     return new_thread;
+}
+
+void schedule() {
+    asm("cli");
+    switch_to_task(current_task_TCB->next);
+    asm("sti");
+
 }
 
 
 void thread_task() {
 	extern int switch_to_task();
     while (1) {
-        printf("current_task_TCB->pid: %d - aviv\n", current_task_TCB->pid);
+        printf("current_task_TCB->pid: %d - %s\n", current_task_TCB->pid, current_task_TCB->thread_name);
         switch_to_task(current_task_TCB->next);
     }
-	
-}
-
-void thread_task2() {
-	extern int switch_to_task();
-    while (1) {
-        printf("current_task_TCB->pid: %d - yay\n", current_task_TCB->pid);
-        switch_to_task(current_task_TCB->next);
-    }
-	
 }

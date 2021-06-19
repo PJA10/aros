@@ -18,10 +18,10 @@ typedef struct thread_control_block {
     char thread_name[16];
 } TCB;
 
+TCB *current_task_TCB;
 
 TCB *new_kernel_thread(void (*startingEIP)(), char *new_thred_name);
 void init_multitasking();
 void thread_task(); // testing!
-void thread_task2(); // testing!
 
 #endif

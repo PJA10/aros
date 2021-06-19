@@ -35,12 +35,13 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
 	extern int switch_to_task();
 	terminal_initialize();
 	init_serial();
-	ata_init(0);
 	mm_init(mbd, magic);
+	ata_init(0);
 	fat_init();
 	printf("kernel main start\n");
 	init_multitasking();
-	TCB *second_thread = new_kernel_thread(thread_task2, "thread");
+	TCB *second_thread = new_kernel_thread(thread_task, "second");
+	TCB *third_thread = new_kernel_thread(thread_task, "third");
 	printf("starting switch\n");
 	switch_to_task(second_thread);
 	thread_task();
