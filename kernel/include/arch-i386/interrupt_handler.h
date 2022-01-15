@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+uint32_t ticks;
+
 struct __attribute__ ((__packed__)) interrupt_frame {
 	uint32_t EIP;
 	uint32_t CS;

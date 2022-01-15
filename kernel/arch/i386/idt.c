@@ -36,7 +36,7 @@ void idt_init(void) {
 	unsigned long idt_ptr[2];
 
 	PIC_remap(0x20, 0x28);
-	IRQ_set_mask((unsigned char) 0); // mask timer timer interrupt
+	IRQ_set_mask((unsigned char) 0); // mask keybord interrupt
 	IRQ_clear_mask((unsigned char) 1); // unmask keybord interrupt
 
 	unsigned long exception0_address = (unsigned long)divide_by_zero_handler;

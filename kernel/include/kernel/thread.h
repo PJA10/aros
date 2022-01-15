@@ -16,6 +16,7 @@ typedef struct thread_control_block {
     int pid;
     struct thread_control_block *next;
     char thread_name[16];
+    uint64_t time_used;
 } TCB;
 
 TCB *current_task_TCB;
@@ -23,5 +24,6 @@ TCB *current_task_TCB;
 TCB *new_kernel_thread(void (*startingEIP)(), char *new_thred_name);
 void init_multitasking();
 void thread_task(); // testing!
+void update_time_used(void);
 
 #endif

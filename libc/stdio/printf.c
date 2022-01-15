@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #define MAX_NUM_DIGITS 50
 
@@ -70,7 +71,24 @@ int printf(const char* restrict format, ...) {
 			int num = va_arg(parameters, int);
 			char str[MAX_NUM_DIGITS];
 			char *strPtr;
-			if (!(strPtr = itoa(num, str, 10))) { // convert to string in base10
+			if (!(strPtr = itoa(num, str, 10, false))) { // convert to string in base10
+				// TODO: set error msg
+				return -1;
+			}
+			size_t len = strlen(strPtr);
+			if (maxrem < len) {
+                                // TODO: Set errno to EOVERFLOW.
+                                return -1;
+                        }
+			if (!print(strPtr, len))
+                                return -1;
+			written += len;
+		}else if (*format == 'u') {
+			format++;
+			unsigned int num = va_arg(parameters, unsigned int);
+			char str[MAX_NUM_DIGITS];
+			char *strPtr;
+			if (!(strPtr = itoa(num, str, 10, true))) { // convert to string in base10
 				// TODO: set error msg
 				return -1;
 			}
@@ -87,7 +105,7 @@ int printf(const char* restrict format, ...) {
                         unsigned int num = va_arg(parameters, unsigned int);
                         char str[MAX_NUM_DIGITS];
                         char *strPtr;
-                        if (!(strPtr = itoa(num, str, 16))) { // convert to string in base16
+                        if (!(strPtr = itoa(num, str, 16, true))) { // convert to string in base16
                                 // TODO: set error msg
                                 return -1;
                         }
@@ -104,7 +122,7 @@ int printf(const char* restrict format, ...) {
 			unsigned int ptr = (int) va_arg(parameters, void *);
 			char str[MAX_NUM_DIGITS];
                         char *strPtr;
-                        if (!(strPtr = itoa(ptr, str, 16))) { // convert to string in base16
+                        if (!(strPtr = itoa(ptr, str, 16, true))) { // convert to string in base16
                                 // TODO: set error msg
                                 return -1;
                         }
@@ -118,6 +136,23 @@ int printf(const char* restrict format, ...) {
                         if (!print(strPtr, len))
                                 return -1;
                         written += len;
+		}else if (*format == 'q') {
+			format++;
+			uint64_t num = va_arg(parameters, uint64_t);
+			char str[MAX_NUM_DIGITS];
+			char *strPtr;
+			if (!(strPtr = itoa(num, str, 10, true))) { // convert to string in base10
+				// TODO: set error msg
+				return -1;
+			}
+			size_t len = strlen(strPtr);
+			if (maxrem < len) {
+                                // TODO: Set errno to EOVERFLOW.
+                                return -1;
+                        }
+			if (!print(strPtr, len))
+                                return -1;
+			written += len;
 		} else {
 			format = format_begun_at;
 			size_t len = strlen(format);

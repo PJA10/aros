@@ -8,6 +8,8 @@ mkdir -p isodir/boot/grub
 
 cp sysroot/boot/aros.kernel isodir/boot/aros.kernel
 cat > isodir/boot/grub/grub.cfg << EOF
+set timeout=0
+set default=0 # Set the default menu entry
 menuentry "aros" {
 	multiboot /boot/aros.kernel
 }

@@ -3,6 +3,8 @@
 
 #include <sys/io.h>
 
+#include <driver/pit.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -87,6 +89,7 @@ __attribute__((interrupt)) void page_fault_handler(struct interrupt_frame* frame
 
 __attribute__((interrupt)) void irq0_handler(struct interrupt_frame* frame)
 {
+	pit_interrupt();
 	PIC_sendEOI((unsigned char)0);
 }
 

@@ -6,6 +6,7 @@
 #include <driver/tty.h>
 #include <driver/serial.h>
 #include <driver/ata.h>
+#include <driver/pit.h>
 
 #include <arch-i386/gdt.h>
 
@@ -38,7 +39,9 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
 	mm_init(mbd, magic);
 	ata_init(0);
 	fat_init();
-	printf("kernel main start\n");
+	pit_init();
+	
+	printf("kernel main start ticks: %q\n", get_nanoseconds());
 	init_multitasking();
 	TCB *second_thread = new_kernel_thread(thread_task, "second");
 	TCB *third_thread = new_kernel_thread(thread_task, "third");
@@ -46,8 +49,9 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
 	switch_to_task(second_thread);
 	thread_task();
 
-	printf("kernel main finished, hlting\n");
+	printf("kernel main finished, hlting  ticks: %q\n", get_nanoseconds());
 	for(;;) {
 		asm("hlt");
 	}
 }
+

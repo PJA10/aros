@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include <stdint.h>
+
 void reverse_string(char str[], int length)
 {
     int start = 0;
@@ -18,11 +20,11 @@ void reverse_string(char str[], int length)
 }
 
 
-char* itoa(int num, char* str, int base)
+char* itoa(int64_t num, char* str, int base, bool is_unsinged)
 {
     int i = 0;
     bool isNegative = false;
-    unsigned posNum = (unsigned int) num;
+    uint64_t posNum = (uint64_t)num;
     /* Handle 0 explicitely, otherwise empty string is printed for 0 */
     if (num == 0)
     {
@@ -33,7 +35,7 @@ char* itoa(int num, char* str, int base)
 
     // In standard itoa(), negative numbers are handled only with
     // base 10. Otherwise numbers are considered unsigned.
-    if (num < 0 && base == 10)
+    if (!is_unsinged && num < 0 && base == 10)
     {
         isNegative = true;
         posNum = (unsigned int) -num;
@@ -42,7 +44,7 @@ char* itoa(int num, char* str, int base)
     // Process individual digits
     while (posNum != 0)
     {
-        int rem = posNum % base;
+        uint64_t rem = posNum % base;
         str[i++] = (rem > 9)? (rem-10) + 'a' : rem + '0';
         posNum = posNum/base;
     }
