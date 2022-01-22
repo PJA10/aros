@@ -1,6 +1,7 @@
 #ifndef _KERNEL_THREAD__H
 #define _KERNEL_THREAD_H 
 
+#include <stdio.h>
 #include <stdint.h>
 #include <arch-i386/paging.h>
 
@@ -20,10 +21,18 @@ typedef struct thread_control_block {
 } TCB;
 
 TCB *current_task_TCB;
+TCB *first_ready_task;
+TCB *last_ready_task;
 
 TCB *new_kernel_thread(void (*startingEIP)(), char *new_thred_name);
 void init_multitasking();
 void thread_task(); // testing!
-void update_time_used(void);
-
+void thread_task2(); // testing!
+void schedule();
+void task_start_up(); // testing!
+void update_time_used(void); // testing!
+void lock_scheduler();
+void unlock_scheduler(); 
+void block_task(int reason);
+void unblock_task(TCB *task);
 #endif

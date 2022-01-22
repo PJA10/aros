@@ -3,13 +3,15 @@
 
 #include <stdint.h>
 
-uint32_t ticks;
 
 struct __attribute__ ((__packed__)) interrupt_frame {
 	uint32_t EIP;
 	uint32_t CS;
 	uint32_t EFLAGS;
 };
+
+void CLI();
+void STI();
 
 __attribute__((interrupt)) void divide_by_zero_handler(struct interrupt_frame* frame);
 __attribute__((interrupt)) void double_fault_handler(struct interrupt_frame* frame, int error_code);

@@ -3,3 +3,8 @@ isodir
 sysroot
 .vscode
 debug-logs.txt
+.gdb_history
+CMakeLists.txt
+cmake-build-debug/
+peda-*
+.idea/

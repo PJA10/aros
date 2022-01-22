@@ -33,7 +33,6 @@
 
 
 void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
-	extern int switch_to_task();
 	terminal_initialize();
 	init_serial();
 	mm_init(mbd, magic);
@@ -43,11 +42,26 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
 	
 	printf("kernel main start ticks: %q\n", get_nanoseconds());
 	init_multitasking();
-	TCB *second_thread = new_kernel_thread(thread_task, "second");
-	TCB *third_thread = new_kernel_thread(thread_task, "third");
+	TCB *second_task = new_kernel_thread(thread_task, "second");
+	//new_kernel_thread(thread_task2, "third");
 	printf("starting switch\n");
-	switch_to_task(second_thread);
-	thread_task();
+	lock_scheduler();
+	schedule();
+	unlock_scheduler();
+
+	//thread_task();
+	int count = 0;
+	while (1) {
+		if (count == 10) {
+			printf("its my 10's loop -> Lets unblock the poor thread\n");
+			unblock_task(second_task);
+		}
+        printf("current_task_TCB->pid: %d - %s - time used: %q count: %d\n", current_task_TCB->pid, current_task_TCB->thread_name, current_task_TCB->time_used, count);
+        lock_scheduler();
+        schedule();
+        unlock_scheduler();
+		count++;
+    }
 
 	printf("kernel main finished, hlting  ticks: %q\n", get_nanoseconds());
 	for(;;) {

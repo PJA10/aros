@@ -9,6 +9,13 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+inline void CLI(){
+	asm("cli");
+}
+
+inline void STI(){
+	asm("sti");
+}
 
 __attribute__((interrupt)) void divide_by_zero_handler(struct interrupt_frame* frame)
 {

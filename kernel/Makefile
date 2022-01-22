@@ -92,6 +92,7 @@ install-kernel: aros.kernel
 
 create-offsets-headers: 
 	$(CC) -c kernel/TCB_offsets.c $(CFLAGS) $(CPPFLAGS) -S -o - | gawk '($$1 == "->") { print "#define " $$2 " " substr($$3,2) }' > include/kernel/TCB_offsets.h
+	$(info   $(CC) -c kernel/TCB_offsets.c $(CFLAGS) $(CPPFLAGS) -S -o - | gawk '($$1 == "->") { print "#define " $$2 " " substr($$3,2) }' > include/kernel/TCB_offsets.h)
 	$(CC) -c arch/i386/tss_offsets.c $(CFLAGS) $(CPPFLAGS) -S -o - | gawk '($$1 == "->") { print "#define " $$2 " " substr($$3,2) }' > include/arch-i386/tss_offsets.h
 
 -include $(OBJS:.o=.d)

@@ -10,4 +10,6 @@ void myStruct_defineOffsets() {
     ASMDEFINE(TCB, ESP);
     ASMDEFINE(TCB, CR3);
     ASMDEFINE(TCB, ESP0);
+    ASMDEFINE(TCB, state);
+    ASMDEFINE(TCB, next);
 }
