@@ -40,10 +40,10 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
 	fat_init();
 	pit_init();
 	
-	printf("kernel main start ticks: %q\n", get_nanoseconds());
+	printf("kernel main start ticks: %q\n", get_nanoseconds_since_boot());
 	init_multitasking();
 	TCB *second_task = new_kernel_thread(thread_task, "second");
-	//new_kernel_thread(thread_task2, "third");
+	//new_kernel_thread(thread_task, "third");
 	printf("starting switch\n");
 	lock_scheduler();
 	schedule();
@@ -52,18 +52,16 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
 	//thread_task();
 	int count = 0;
 	while (1) {
-		if (count == 10) {
-			printf("its my 10's loop -> Lets unblock the poor thread\n");
-			unblock_task(second_task);
-		}
         printf("current_task_TCB->pid: %d - %s - time used: %q count: %d\n", current_task_TCB->pid, current_task_TCB->thread_name, current_task_TCB->time_used, count);
-        lock_scheduler();
-        schedule();
-        unlock_scheduler();
+		printf("time now is: %q\n", get_nanoseconds_since_boot());
+        // lock_scheduler();
+        // schedule();
+        // unlock_scheduler();
+		sleep(1);
 		count++;
     }
 
-	printf("kernel main finished, hlting  ticks: %q\n", get_nanoseconds());
+	printf("kernel main finished, hlting  ticks: %q\n", get_nanoseconds_since_boot());
 	for(;;) {
 		asm("hlt");
 	}

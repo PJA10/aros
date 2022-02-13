@@ -9,7 +9,13 @@
 
 .global switch_to_task
 switch_to_task:
- 
+    # check if task switch need to postpone
+    cmp $0, (postpone_task_switches_counter)
+    je .saveTaskState
+    movl $1, (task_switches_postponed_flag)
+    ret
+
+.saveTaskState:
     #Save previous task's state
  
     #Notes:
@@ -17,7 +23,7 @@ switch_to_task:
     #  EIP is already saved on the stack by the caller's "CALL" instruction
     #  The task isn't able to change CR3 so it doesn't need to be saved
     #  Segment registers are constants (while running kernel code) so they don't need to be saved
- 
+
     push %ebx
     push %esi
     push %edi

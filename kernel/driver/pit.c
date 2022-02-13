@@ -44,9 +44,9 @@ void pit_init() {
 
 void pit_interrupt() {
     ticks++;
-    //printf("ticks: %u, nanoseconds: %q\n", ticks, get_nanoseconds());
+    //printf("ticks: %u, nanoseconds: %q\n", ticks, get_nanoseconds_since_boot());
 }
 
-inline uint64_t get_nanoseconds() {
+inline uint64_t get_nanoseconds_since_boot() {
     return ticks * ticks_to_nanoseconds;
 }

@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <kernel/thread.h>
+
 #include <driver/tty.h>
 
 static void terminal_putentryat(unsigned char c, uint8_t color, size_t x, size_t y);
@@ -32,6 +34,7 @@ void terminal_initialize(void) {
 
 void terminal_putchar(char c) {
 	unsigned char uc = c;
+	lock_stuff();
 	if (uc == '\n') {
 		terminal_column = 0;
                 if (++terminal_row == VGA_HEIGHT) {
@@ -46,6 +49,7 @@ void terminal_putchar(char c) {
 				terminal_scrollraw();
 		}
 	}
+	unlock_stuff();
 }
 
 void terminal_write(const char* data, size_t size) {
@@ -67,15 +71,17 @@ static void terminal_putentryat(unsigned char c, uint8_t color, size_t x, size_t
 }
 
 static void terminal_scrollraw() {
-        for (size_t y = 0; y < VGA_HEIGHT; y++) {
-                for (size_t x = 0; x < VGA_WIDTH; x++) {
-                        const size_t index = y * VGA_WIDTH + x;
-                        if (y < VGA_HEIGHT - 1)
-                                terminal_buffer[index] = terminal_buffer[index + VGA_WIDTH];
-                        else
-                                terminal_buffer[index] = vga_entry(' ', terminal_color);
-                }
-        }
-        terminal_row = VGA_HEIGHT - 1;
-        terminal_column = 0;
+	lock_stuff();
+	for (size_t y = 0; y < VGA_HEIGHT; y++) {
+			for (size_t x = 0; x < VGA_WIDTH; x++) {
+					const size_t index = y * VGA_WIDTH + x;
+					if (y < VGA_HEIGHT - 1)
+							terminal_buffer[index] = terminal_buffer[index + VGA_WIDTH];
+					else
+							terminal_buffer[index] = vga_entry(' ', terminal_color);
+			}
+	}
+	terminal_row = VGA_HEIGHT - 1;
+	terminal_column = 0;
+	unlock_stuff();
 }

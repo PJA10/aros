@@ -6,7 +6,7 @@
 /**
  * return the number of nano seconds since boot/init of timer.
  */
-uint64_t get_nanoseconds();
+uint64_t get_nanoseconds_since_boot();
 void pit_init();
 void pit_interrupt();
 

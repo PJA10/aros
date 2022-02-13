@@ -98,6 +98,7 @@ __attribute__((interrupt)) void irq0_handler(struct interrupt_frame* frame)
 {
 	pit_interrupt();
 	PIC_sendEOI((unsigned char)0);
+	scheduler_timer_handler();
 }
 
 __attribute__((interrupt)) void irq1_handler(struct interrupt_frame* frame)

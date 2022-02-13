@@ -17,9 +17,94 @@
 extern int switch_to_task();
 
 static uint64_t last_count = 0;
-int IRQ_disable_counter = 0;
- 
+static int IRQ_disable_counter = 0;
+static TCB* sleeping_task_list = NULL;
+
 static void add_to_ready_list(TCB *to_add);
+
+
+void scheduler_timer_handler() {
+    TCB* next_task;
+    TCB* this_task;
+
+    lock_stuff();
+
+    // Move everything from the sleeping task list into a temporary variable and make the sleeping task list empty
+    next_task = sleeping_task_list;
+    sleeping_task_list = NULL;
+    // For each task, wake it up or put it back on the sleeping task list
+    while(next_task != NULL) {
+        this_task = next_task;
+        next_task = this_task->next;
+ 
+        if(this_task->sleep_expiry <= get_nanoseconds_since_boot()) {
+            // Task needs to be woken up
+            unblock_task(this_task);
+        } else {
+            // Task needs to be put back on the sleeping task list
+            this_task->next = sleeping_task_list;
+            sleeping_task_list = this_task;
+        }
+    }
+ 
+    // Done, unlock the scheduler (and do any postponed task switches!)
+    unlock_stuff();
+}
+
+void nano_sleep_until(uint64_t when) {
+    lock_stuff();
+ 
+    // Make sure "when" hasn't already occured
+    if(when < get_nanoseconds_since_boot()) {
+        unlock_scheduler();
+        return;
+    }
+ 
+    // Set time when task should wake up
+    current_task_TCB->sleep_expiry = when;
+ 
+    // Add task to the start of the unsorted list of sleeping tasks
+    current_task_TCB->next = sleeping_task_list;
+    sleeping_task_list = current_task_TCB;
+ 
+    unlock_stuff();
+ 
+    // Find something else for the CPU to do
+    block_task(SLEEPING);
+}
+
+void nano_sleep(uint64_t nanoseconds) {
+    nano_sleep_until(get_nanoseconds_since_boot() + nanoseconds);
+}
+
+void sleep(uint32_t seconds) {
+    nano_sleep_until(get_nanoseconds_since_boot() + seconds*1000000000); // 1000000000 nanoseconds = 1 second
+}
+
+
+void lock_stuff(void) {
+#ifndef SMP
+    CLI();
+    IRQ_disable_counter++;
+    postpone_task_switches_counter++;
+#endif
+}
+
+void unlock_stuff(void) {
+#ifndef SMP
+    postpone_task_switches_counter--;
+    if(postpone_task_switches_counter == 0) {
+        if(task_switches_postponed_flag != 0) {
+            task_switches_postponed_flag = 0;
+            schedule();
+        }
+    }
+    IRQ_disable_counter--;
+    if(IRQ_disable_counter == 0) {
+        STI();
+    }
+#endif
+}
 
 void lock_scheduler(void) {
 #ifndef SMP
@@ -45,13 +130,15 @@ void block_task(int reason) {
 }
 
 void unblock_task(TCB *task) {
+    int preempt = 0;
     lock_scheduler();
     if(first_ready_task == NULL) {
         // Only one task was running before, so pre-empt
-        switch_to_task(task);
-    } else {
-        // There's at least one task on the "ready to run" queue already, so don't pre-empt
-        add_to_ready_list(task);
+        preempt = 1;
+    }
+    add_to_ready_list(task);
+    if (preempt) {
+        schedule();
     }
     unlock_scheduler();
 }
@@ -93,6 +180,8 @@ void init_multitasking() {
     first_ready_task = NULL;
     last_ready_task = NULL;
     strcpy(current_task_TCB->thread_name, "init");
+    postpone_task_switches_counter = 0;
+    task_switches_postponed_flag = 0;
 }
 
 // only support 1 new thread
@@ -136,14 +225,13 @@ TCB *new_kernel_thread(void (*startingEIP)(), char *new_thred_name) {
  * Caller has to hold big scheduler lock
  */
 void schedule() {
+    if(postpone_task_switches_counter != 0) {
+        task_switches_postponed_flag = 1;
+        return;
+    }
     if (first_ready_task != NULL) {
         update_time_used();
         TCB *task = pop_first_ready_task();
-        // if (current_task_TCB->state == RUNNING) {
-        //     current_task_TCB->state = READY;
-        //     add_to_ready_list(current_task_TCB);
-        // }
-        // task->state = RUNNING;
         switch_to_task(task);
     }
 }
@@ -153,19 +241,24 @@ void schedule() {
  * The other place you might want to update the amount of time a task has consumed is immediately after the CPU changes from user-space code to kernel code and immediately before the CPU changes from kernel code to user-space code; so that you can keep track of "amount of time task spent running kernel code" and "amount of time task spent running user-space code" separately.
  */
 void update_time_used(void) {
-    uint64_t current_count = get_nanoseconds();
+    uint64_t current_count = get_nanoseconds_since_boot();
     uint64_t elapsed = current_count - last_count;
     last_count = current_count;
     //printf("current_count: %q, elapsed: %q, current_task_TCB->time_used: %q\n", current_count, elapsed, current_task_TCB->time_used);
     current_task_TCB->time_used += elapsed;
 }
 
+int p = 0;
 void thread_task() {
-    printf("task %d blocking myself!!!\n", current_task_TCB->pid);
-    block_task(BLOCKED);
-    printf("task %d got released!!\n", current_task_TCB->pid);
+    int x = 0;
     while (1) {
-        printf("current_task_TCB->pid: %d - %s - time used: %q\n", current_task_TCB->pid, current_task_TCB->thread_name, current_task_TCB->time_used);
+        x++;
+        for (size_t i = 0; i < 5000; i++)
+        {
+            update_time_used();
+            p+=x+i;
+        }
+        
         lock_scheduler();
         schedule();
         unlock_scheduler();
