@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+uint64_t ticks_to_nanoseconds;
+
 /**
  * return the number of nano seconds since boot/init of timer.
  */

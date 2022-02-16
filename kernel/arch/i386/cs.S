@@ -6,18 +6,37 @@
    # size of quux structs, incl. padding
 #include "kernel/TCB_offsets.h"
 #include "arch-i386/tss_offsets.h"
+#include "kernel/global_thread_defines.h"
+
 
 .global switch_to_task
 switch_to_task:
+
     # check if task switch need to postpone
-    cmp $0, (postpone_task_switches_counter)
-    je .saveTaskState
+    cmpl $0, (postpone_task_switches_counter)
+    je .timeSliceSetup
     movl $1, (task_switches_postponed_flag)
     ret
 
+
+.timeSliceSetup:
+    # set time_slice_remaining to time_slice_length (if swetching to idle_task set to zero)
+
+    movl 4(%esp), %eax               #esi = address of the next task's "thread control block" (parameter passed on stack)
+    cmpl %eax, idle_task
+    je .noTimeSlice
+
+    mov $TIME_SLICE_LENGTH&0xffffffff, %ecx
+    mov %ecx, (time_slice_remaining)
+    mov $TIME_SLICE_LENGTH>>32, %ecx
+    mov %ecx, (time_slice_remaining+4)
+    jmp .saveTaskState
+.noTimeSlice:
+    movl $0, (time_slice_remaining)
+    movl $0, (time_slice_remaining+4)
+
 .saveTaskState:
     #Save previous task's state
- 
     #Notes:
     #  For cdecl: EAX, ECX, and EDX are already saved by the caller and don't need to be saved again
     #  EIP is already saved on the stack by the caller's "CALL" instruction

@@ -1,0 +1,6 @@
+#ifndef _KERNEL_GLOBAL_THREAD_DEFINES__H
+#define _KERNEL_GLOBAL_THREAD_DEFINES__H 
+
+#define TIME_SLICE_LENGTH 50000000   // 50000000 nanoseconds is 50 ms
+
+#endif

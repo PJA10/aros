@@ -24,9 +24,9 @@
 // #define SQUARE_WAVE_GENERATOR_MODE 0x7 - ssame as 011b
 
 #define BASE_FREQ 1193182 // Hz
+#define TARGET_FREQ 1000 // Hz
 
 static uint32_t ticks;
-static uint64_t ticks_to_nanoseconds;
 
 void set_mode(uint8_t channel, uint8_t access_mode, uint8_t operatint_mode) {
     uint8_t command = (uint8_t)((channel << 6) | access_mode << 4 | operatint_mode << 1);
@@ -35,7 +35,7 @@ void set_mode(uint8_t channel, uint8_t access_mode, uint8_t operatint_mode) {
 
 void pit_init() {
     set_mode(0, LOBYTE_HIBYTE_ACCESS_MODE, RATE_GENERATOR_MODE);
-    int divider = 11932; // base freq is 1.193182 MHz so 1.193182 MHz / 11932 = 99.9984915 Hz ~ 100 Hz
+    int divider = BASE_FREQ /TARGET_FREQ;
     outb(CHANNEL_0_DATA_PORT, (uint8_t)divider&0xff);
     outb(CHANNEL_0_DATA_PORT, (uint8_t)((divider&0xff00)>>0x8));
     IRQ_clear_mask((unsigned char) 0); // unmask IRQ0 - timer timer interrupt

@@ -11,6 +11,7 @@
 #include <driver/pit.h>
 
 
+
 /**
  * Caller has to hold big scheduler lock
  */
@@ -22,7 +23,6 @@ static TCB* sleeping_task_list = NULL;
 
 static void add_to_ready_list(TCB *to_add);
 
-
 void scheduler_timer_handler() {
     TCB* next_task;
     TCB* this_task;
@@ -32,6 +32,7 @@ void scheduler_timer_handler() {
     // Move everything from the sleeping task list into a temporary variable and make the sleeping task list empty
     next_task = sleeping_task_list;
     sleeping_task_list = NULL;
+
     // For each task, wake it up or put it back on the sleeping task list
     while(next_task != NULL) {
         this_task = next_task;
@@ -47,6 +48,16 @@ void scheduler_timer_handler() {
         }
     }
  
+    // Handle "end of time slice" preemption
+    if(time_slice_remaining != 0) {
+        // There is a time slice length
+        if(time_slice_remaining <= ticks_to_nanoseconds) {
+            schedule();
+        } else {
+            time_slice_remaining -= ticks_to_nanoseconds;
+        }
+    }
+
     // Done, unlock the scheduler (and do any postponed task switches!)
     unlock_stuff();
 }
@@ -132,7 +143,7 @@ void block_task(int reason) {
 void unblock_task(TCB *task) {
     int preempt = 0;
     lock_scheduler();
-    if(first_ready_task == NULL) {
+    if(first_ready_task == NULL || current_task_TCB == idle_task) {
         // Only one task was running before, so pre-empt
         preempt = 1;
     }
@@ -180,8 +191,14 @@ void init_multitasking() {
     first_ready_task = NULL;
     last_ready_task = NULL;
     strcpy(current_task_TCB->thread_name, "init");
+
+    // accsesed from cs.S so we need to init here
     postpone_task_switches_counter = 0;
     task_switches_postponed_flag = 0;
+    time_slice_remaining = 0;
+
+
+    idle_task = new_kernel_thread(kernel_idle_task, "idle task");
 }
 
 // only support 1 new thread
@@ -232,6 +249,21 @@ void schedule() {
     if (first_ready_task != NULL) {
         update_time_used();
         TCB *task = pop_first_ready_task();
+        if(task == idle_task) {
+            // Try to find an alternative to prevent the idle task getting CPU time
+            if(first_ready_task != NULL) {
+                // Idle task was selected but other task's are "ready to run"
+                task = pop_first_ready_task();
+                add_to_ready_list(idle_task);
+            } else if( current_task_TCB->state == RUNNING) {
+                add_to_ready_list(idle_task);
+                // No other tasks ready to run, but the currently running task wasn't blocked and can keep running
+                return;
+            } else {
+                printf("swiching to idle_task\n");
+                // No other options - the idle task is the only task that can be given CPU time
+            }
+        }
         switch_to_task(task);
     }
 }
@@ -248,28 +280,14 @@ void update_time_used(void) {
     current_task_TCB->time_used += elapsed;
 }
 
-int p = 0;
 void thread_task() {
-    int x = 0;
     while (1) {
-        x++;
-        for (size_t i = 0; i < 5000; i++)
-        {
-            update_time_used();
-            p+=x+i;
-        }
-        
-        lock_scheduler();
-        schedule();
-        unlock_scheduler();
+        printf("current_task_TCB->pid: %d - %s - time used: %q\n", current_task_TCB->pid, current_task_TCB->thread_name, current_task_TCB->time_used);
     }
 }
 
-void thread_task2() {
-    while (1) {
-        printf("current_task_TCB->pid: %d - %s - time used: %q\n", current_task_TCB->pid, current_task_TCB->thread_name, current_task_TCB->time_used);
-        lock_scheduler();
-        schedule();
-        unlock_scheduler();
+void kernel_idle_task(void) {
+    for(;;) {
+        asm("hlt");
     }
 }

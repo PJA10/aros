@@ -43,7 +43,7 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
 	printf("kernel main start ticks: %q\n", get_nanoseconds_since_boot());
 	init_multitasking();
 	TCB *second_task = new_kernel_thread(thread_task, "second");
-	//new_kernel_thread(thread_task, "third");
+	new_kernel_thread(thread_task, "third");
 	printf("starting switch\n");
 	lock_scheduler();
 	schedule();
@@ -57,7 +57,7 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
         // lock_scheduler();
         // schedule();
         // unlock_scheduler();
-		sleep(1);
+		//sleep(1);
 		count++;
     }
 
