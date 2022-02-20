@@ -10,6 +10,7 @@
 
 #include <driver/pit.h>
 
+#define KERNEL_STACK_SIZE 4096
 
 
 /**
@@ -20,8 +21,55 @@ extern int switch_to_task();
 static uint64_t last_count = 0;
 static int IRQ_disable_counter = 0;
 static TCB* sleeping_task_list = NULL;
+static TCB *terminated_task_list = NULL;
+static TCB *cleaner_task = NULL;
 
 static void add_to_ready_list(TCB *to_add);
+
+void terminate_task(void) {
+ 
+    // TODO: Can do any harmless stuff here (close files, free memory in user-space, ...) but there's none of that yet
+ 
+    lock_stuff();
+ 
+    // Put this task on the terminated task list
+    lock_scheduler();
+    current_task_TCB->next = terminated_task_list;
+    terminated_task_list = current_task_TCB;
+    unlock_scheduler();
+ 
+    // Block this task (note: task switch will be postponed until scheduler lock is released)
+    block_task(TERMINATED);
+ 
+    // Make sure the cleaner task isn't paused
+    unblock_task(cleaner_task);
+ 
+    // Unlock the scheduler's lock
+    unlock_stuff();
+}
+
+static void cleanup_terminated_task(TCB * task) {
+    printf("terminating %s\n", task->thread_name);
+    kfree(task->kernel_stack_button);
+    kfree(task);
+}
+
+void cleaner_main(void) {
+    while (1) {    
+        TCB *task;
+        printf("cleaner_main iteration\n");
+        lock_stuff();
+    
+        while(terminated_task_list != NULL) {
+            task = terminated_task_list;
+            terminated_task_list = task->next;
+            cleanup_terminated_task(task);
+        }
+    
+        block_task(BLOCKED);
+        unlock_stuff();
+    }
+}
 
 void scheduler_timer_handler() {
     TCB* next_task;
@@ -199,16 +247,16 @@ void init_multitasking() {
 
 
     idle_task = new_kernel_thread(kernel_idle_task, "idle task");
+    cleaner_task = new_kernel_thread(cleaner_main, "cleaner task");
 }
 
 // only support 1 new thread
 TCB *new_kernel_thread(void (*startingEIP)(), char *new_thred_name) {
     static int i = 1;
-    //static char another_kernel_stack[4096];
-    char *another_kernel_stack = kmalloc(4096);
+    char *another_kernel_stack = kmalloc(KERNEL_STACK_SIZE);
     i += 1;
     TCB *new_thread = kmalloc(sizeof(TCB)); 
-    uint32_t *new_kernel_stack = (uint32_t *)(&another_kernel_stack[4095]);
+    uint32_t *new_kernel_stack = (uint32_t *)(&another_kernel_stack[KERNEL_STACK_SIZE-1]);
     *new_kernel_stack = (uint32_t) startingEIP; // task start up will return into the given fucntion
     new_kernel_stack -= 1;
     *new_kernel_stack = (uint32_t) new_thread; // thread's "thread control block" (parameter passed on stack to cs)
@@ -225,6 +273,7 @@ TCB *new_kernel_thread(void (*startingEIP)(), char *new_thred_name) {
 
     new_thread->ESP0 = (uint32_t)(&another_kernel_stack[4095]);
     new_thread->ESP = (uint32_t)new_kernel_stack;
+    new_thread->kernel_stack_button = (uint32_t)another_kernel_stack;
     new_thread->directory = get_curr_page_directory();
     new_thread->CR3 = new_thread->directory->physicalAddr;
     new_thread->state = READY;
@@ -283,6 +332,7 @@ void update_time_used(void) {
 void thread_task() {
     while (1) {
         printf("current_task_TCB->pid: %d - %s - time used: %q\n", current_task_TCB->pid, current_task_TCB->thread_name, current_task_TCB->time_used);
+        terminate_task();
     }
 }
 

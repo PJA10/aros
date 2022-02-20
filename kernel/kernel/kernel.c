@@ -54,11 +54,17 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
 	while (1) {
         printf("current_task_TCB->pid: %d - %s - time used: %q count: %d\n", current_task_TCB->pid, current_task_TCB->thread_name, current_task_TCB->time_used, count);
 		printf("time now is: %q\n", get_nanoseconds_since_boot());
+		if (count == 10) {
+			printf("terminate_task!!!!!!!!!!!!!!!!!! now is: %q\n", get_nanoseconds_since_boot());
+			terminate_task();
+		}
+		
         // lock_scheduler();
         // schedule();
         // unlock_scheduler();
 		//sleep(1);
 		count++;
+		
     }
 
 	printf("kernel main finished, hlting  ticks: %q\n", get_nanoseconds_since_boot());

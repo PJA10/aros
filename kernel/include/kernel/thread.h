@@ -6,7 +6,7 @@
 #include <arch-i386/paging.h>
 #include "kernel/global_thread_defines.h"
 
-enum states {RUNNING, READY, BLOCKED, SLEEPING};
+enum states {RUNNING, READY, BLOCKED, SLEEPING, TERMINATED};
 
 typedef struct thread_control_block {
     uint32_t ESP;
@@ -19,6 +19,7 @@ typedef struct thread_control_block {
     char thread_name[16];
     uint64_t time_used;
     uint64_t sleep_expiry;
+    uint32_t kernel_stack_button;
 } TCB;
 
 // accsesed from cs.S
@@ -29,6 +30,7 @@ TCB *idle_task;
 int postpone_task_switches_counter;
 int task_switches_postponed_flag;
 uint64_t time_slice_remaining;
+
 
 
 TCB *new_kernel_thread(void (*startingEIP)(), char *new_thred_name);
@@ -49,5 +51,6 @@ void nano_sleep(uint64_t nanoseconds);
 void nano_sleep_until(uint64_t when);
 void scheduler_timer_handler();
 void kernel_idle_task(void);
+void terminate_task(void);
 
 #endif
