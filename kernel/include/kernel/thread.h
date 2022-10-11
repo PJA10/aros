@@ -6,7 +6,7 @@
 #include <arch-i386/paging.h>
 #include "kernel/global_thread_defines.h"
 
-enum states {RUNNING, READY, BLOCKED, SLEEPING, TERMINATED};
+enum states {RUNNING, READY, BLOCKED, SLEEPING, TERMINATED, WAITING_FOR_LOCK};
 
 typedef struct thread_control_block {
     uint32_t ESP;
@@ -22,6 +22,13 @@ typedef struct thread_control_block {
     uint32_t kernel_stack_button;
 } TCB;
 
+typedef struct {
+    int max_count;
+    int current_count;
+    TCB *first_waiting_task;
+    TCB *last_waiting_task;
+} semaphore_t;
+
 // accsesed from cs.S
 TCB *current_task_TCB;
 TCB *first_ready_task;
@@ -30,8 +37,6 @@ TCB *idle_task;
 int postpone_task_switches_counter;
 int task_switches_postponed_flag;
 uint64_t time_slice_remaining;
-
-
 
 TCB *new_kernel_thread(void (*startingEIP)(), char *new_thred_name);
 void init_multitasking();

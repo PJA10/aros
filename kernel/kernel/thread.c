@@ -26,24 +26,93 @@ static TCB *cleaner_task = NULL;
 
 static void add_to_ready_list(TCB *to_add);
 
-void terminate_task(void) {
- 
-    // TODO: Can do any harmless stuff here (close files, free memory in user-space, ...) but there's none of that yet
- 
+semaphore_t *create_semaphore(int max_count) {
+    semaphore_t *semaphore;
+
+    semaphore = kmalloc(sizeof(semaphore_t));
+    if(semaphore != NULL) {
+        semaphore->max_count = max_count;
+        semaphore->current_count = 0;
+        semaphore->first_waiting_task = NULL;
+        semaphore->last_waiting_task = NULL;
+    }
+    return semaphore;
+}
+
+semaphore_t *create_mutex(void) {
+    return create_semaphore(1);
+}
+
+void delete_semaphore(semaphore_t *semaphore) {
+    kfree(semaphore);
+}
+
+void delete_mutex(semaphore_t *mutex) {
+    delete_semaphore(mutex);
+}
+
+void acquire_semaphore(semaphore_t *semaphore) {
     lock_stuff();
+    if(semaphore->current_count < semaphore->max_count) {
+        // We can acquire now
+        semaphore->current_count++;
+    } else {
+        // We have to wait
+        current_task_TCB->next = NULL;
+        if(semaphore->first_waiting_task == NULL) {
+            semaphore->first_waiting_task = current_task_TCB;
+        } else {
+            semaphore->last_waiting_task->next = current_task_TCB;
+        }
+        semaphore->last_waiting_task = current_task_TCB;
+        block_task(WAITING_FOR_LOCK);    // This task will be unblocked when it can acquire the semaphore
+    }
+    unlock_stuff();
+}
+
+void acquire_mutex(semaphore_t *semaphore) {
+    acquire_semaphore(semaphore);
+}
+
+void release_semaphore(semaphore_t *semaphore) {
+    lock_stuff();
+
+    if(semaphore->first_waiting_task != NULL) {
+        // We need to wake up the first task that was waiting for the semaphore
+        // Note: "semaphore->current_count" remains the same (this task leaves and another task enters)
+
+        TCB *task = semaphore->first_waiting_task;
+        semaphore->first_waiting_task = task->next;
+        unblock_task(task);
+    } else {
+        // No tasks are waiting
+        semaphore->current_count--;
+    }
+    unlock_stuff();
+}
  
+void release_mutex(semaphore_t *semaphore) {
+    release_semaphore(semaphore);
+}
+
+void terminate_task(void) {
+
+    // TODO: Can do any harmless stuff here (close files, free memory in user-space, ...) but there's none of that yet
+
+    lock_stuff();
+
     // Put this task on the terminated task list
     lock_scheduler();
     current_task_TCB->next = terminated_task_list;
     terminated_task_list = current_task_TCB;
     unlock_scheduler();
- 
+
     // Block this task (note: task switch will be postponed until scheduler lock is released)
     block_task(TERMINATED);
  
     // Make sure the cleaner task isn't paused
     unblock_task(cleaner_task);
- 
+
     // Unlock the scheduler's lock
     unlock_stuff();
 }
@@ -283,7 +352,7 @@ TCB *new_kernel_thread(void (*startingEIP)(), char *new_thred_name) {
 
     add_to_ready_list(new_thread);
 
-    printf("returning from new_kernel_thread, new_thread: 0x%x, current_task_TCB: 0x%x\n", new_kernel_stack, current_task_TCB);
+    // printf("returning from new_kernel_thread, new_thread: 0x%x, current_task_TCB: 0x%x\n", new_kernel_stack, current_task_TCB);
     return new_thread;
 }
 
