@@ -2,11 +2,13 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/io.h>
 
 #include <driver/tty.h>
 #include <driver/serial.h>
 #include <driver/ata.h>
 #include <driver/pit.h>
+#include <driver/ps2_controller.h>
 
 #include <arch-i386/gdt.h>
 
@@ -23,7 +25,6 @@
  * arch independent isr
  * interrupt driven io / io using DMA
  * improve format string printing
- * Timers - maybe PIT first?
  * improve kernel heap - tree instead of linked list
  * randomize Stack Smash Protector
  * lint - static code analysis
@@ -39,35 +40,39 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
 	ata_init(0);
 	fat_init();
 	pit_init();
+	if (ps2_controller_init() == -1) {
+		printf("ps2_controller_init failed!\n");
+	}
 	
 	printf("kernel main start ticks: %q\n", get_nanoseconds_since_boot());
 	init_multitasking();
-	TCB *second_task = new_kernel_thread(thread_task, "second");
-	new_kernel_thread(thread_task, "third");
-	printf("starting switch\n");
-	lock_scheduler();
-	schedule();
-	unlock_scheduler();
 
-	//thread_task();
-	int count = 0;
-	while (1) {
-        printf("current_task_TCB->pid: %d - %s - time used: %q count: %d\n", current_task_TCB->pid, current_task_TCB->thread_name, current_task_TCB->time_used, count);
-		printf("time now is: %q\n", get_nanoseconds_since_boot());
-		if (count == 10) {
-			printf("terminate_task!!!!!!!!!!!!!!!!!! now is: %q\n", get_nanoseconds_since_boot());
-			terminate_task();
-		}
-		
-        // lock_scheduler();
-        // schedule();
-        // unlock_scheduler();
-		//sleep(1);
-		count++;
-		
-    }
+	// TCB *second_task = new_kernel_thread(thread_task, "second");
+	// new_kernel_thread(thread_task, "third");
+	// printf("starting switch\n");
+	// lock_scheduler();
+	// schedule();
+	// unlock_scheduler();
 
-	printf("kernel main finished, hlting  ticks: %q\n", get_nanoseconds_since_boot());
+	// //thread_task();
+	// int count = 0;
+	// while (1) {
+    //     printf("current_task_TCB->pid: %d - %s - time used: %q count: %d\n", current_task_TCB->pid, current_task_TCB->thread_name, current_task_TCB->time_used, count);
+	// 	printf("time now is: %q\n", get_nanoseconds_since_boot());
+	// 	if (count == 10) {
+	// 		printf("terminate_task!!!!!!!!!!!!!!!!!! now is: %q\n", get_nanoseconds_since_boot());
+	// 		terminate_task();
+	// 	}
+		
+    //     // lock_scheduler();
+    //     // schedule();
+    //     // unlock_scheduler();
+	// 	//sleep(1);
+	// 	count++;
+		
+    // }
+
+	// printf("kernel main finished, hlting  ticks: %q\n", get_nanoseconds_since_boot());
 	for(;;) {
 		asm("hlt");
 	}

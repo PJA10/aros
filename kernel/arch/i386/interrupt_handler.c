@@ -4,6 +4,7 @@
 #include <sys/io.h>
 
 #include <driver/pit.h>
+#include <driver/ps2_controller.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -103,9 +104,13 @@ __attribute__((interrupt)) void irq0_handler(struct interrupt_frame* frame)
 
 __attribute__((interrupt)) void irq1_handler(struct interrupt_frame* frame)
 {
-	unsigned char scan_code = inb(0x60);
-	printf("IRQ1 handler - keybord interrupt - key preesed: 0x%x\n", scan_code);
-	printf("IP: %x, CS: %x, EFLAGS: %x\n", frame->EIP, frame->CS, frame->EFLAGS);
+	if (is_ps2_controller_init) {
+		unsigned char scan_code = inb(0x60);
+		printf("IRQ1 handler - keybord interrupt - key preesed: 0x%x\n", scan_code);
+	}
+	else {
+		printf("IP: %x, CS: %x, EFLAGS: %x - irq1 handler - ps2 controller\n", frame->EIP, frame->CS, frame->EFLAGS);
+	}
 	PIC_sendEOI((unsigned char)1);
 }
 
