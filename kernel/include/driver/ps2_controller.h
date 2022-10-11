@@ -4,10 +4,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-extern bool is_ps2_controller_init;
+extern bool ps2_controller__is_init;
 
-uint8_t read_data();
-int send_data(uint8_t value);
-int ps2_controller_init();
+uint8_t ps2_controller__read_data();
+int ps2_controller__send_data(uint8_t value);
+int ps2_controller__init();
 
 #endif

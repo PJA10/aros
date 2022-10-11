@@ -40,8 +40,8 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
 	ata_init(0);
 	fat_init();
 	pit_init();
-	if (ps2_controller_init() == -1) {
-		printf("ps2_controller_init failed!\n");
+	if (ps2_controller__init() == -1) {
+		printf("ps2_controller__init failed!\n");
 	}
 	
 	printf("kernel main start ticks: %q\n", get_nanoseconds_since_boot());

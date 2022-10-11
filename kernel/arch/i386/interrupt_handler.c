@@ -104,7 +104,7 @@ __attribute__((interrupt)) void irq0_handler(struct interrupt_frame* frame)
 
 __attribute__((interrupt)) void irq1_handler(struct interrupt_frame* frame)
 {
-	if (is_ps2_controller_init) {
+	if (ps2_controller__is_init) {
 		unsigned char scan_code = inb(0x60);
 		printf("IRQ1 handler - keybord interrupt - key preesed: 0x%x\n", scan_code);
 	}
