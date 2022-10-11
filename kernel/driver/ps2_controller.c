@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <common.h>
 
 #include <driver/ps2_controller.h>
 
@@ -33,8 +34,9 @@
 #define RESEET_DEVICE_CMD (0xFF)
 
 #define RESET_SUCCESS (0xFA)
+#define SELF_TEST_PASSED (0xAA)
 
-#define TIMEOUT (100)
+#define WAIT_FOR_READY_TIMEOUT (100)
 
 bool ps2_controller__is_init = false;
 
@@ -46,32 +48,48 @@ static uint8_t get_status() {
     return inb(STATUS_REG);
 }
 
-uint8_t ps2_controller__read_data() {
+return_code_t ps2_controller__read_data(uint8_t *out_data) {
+    return_code_t return_code = RETURN_CODE_UNINIALIZED;
     uint8_t counter = 0;
+
     while (!(get_status() & OUTPUT_BUFFER_FULL_FLAG)) {
-        if (counter > TIMEOUT) {
+        if (counter > WAIT_FOR_READY_TIMEOUT) {
             printf("ps2 contoller ps2_controller__read_data failed, output buffer isn't full - status: 0x%x\n", get_status());
-            return -1;
+            return_code = RETURN_CODE_PS2_CONTROLLER__READ_DATA_TIMEOUT;
+            goto cleanup;
         }
         counter++;
     }
-    return inb(DATA_PORT);
+    *out_data = inb(DATA_PORT);
+    return_code = RETURN_CODE_SUCCESS;
+
+cleanup:
+    return return_code;
 }
 
-int ps2_controller__send_data(uint8_t value) {
+return_code_t ps2_controller__send_data(uint8_t value) {
+    return_code_t return_code = RETURN_CODE_UNINIALIZED;
     uint8_t counter = 0;
+
     while (get_status() & INPUT_BUFFER_FULL_FLAG) {
-        if (counter > TIMEOUT) {
+        if (counter > WAIT_FOR_READY_TIMEOUT) {
             printf("ps2 contoller send_data failed, input buffer isn't full - status: 0x%x\n", get_status());
-            return -1;
+            return_code = RETURN_CODE_PS2_CONTROLLER__SEND_DATA_TIMEOUT;
+            goto cleanup;
         }
         counter++;
     }
     outb(DATA_PORT, value);
-    return 0;
+    return_code = RETURN_CODE_SUCCESS;
+
+cleanup:
+    return return_code;
 }
 
-int ps2_controller__init() {
+return_code_t ps2_controller__init() {
+    return_code_t return_code = RETURN_CODE_UNINIALIZED;
+    uint8_t data = 0;
+
     // Disable Devices
     send_command(DISABLE_SECOND_PS2_CMD);
     send_command(DISABLE_FIRST_PS2_CMD);
@@ -80,39 +98,48 @@ int ps2_controller__init() {
     inb(DATA_PORT);
     if (get_status() & OUTPUT_BUFFER_FULL_FLAG)
     {
-        printf("ps2_controller__init failed, couldn't flush output buffer\n");
-        return -1;
+        return_code = RETURN_CODE_PS2_CONTROLLER__INIT_COULDNT_FLUSH_OUTPUT_BUFFER;
+        goto cleanup;
     }
     
     // Set the Controller Configuration Byte
     send_command(READ_CONFIG_BYTE_CMD);
-    uint8_t old_config = ps2_controller__read_data();
-	printf("old_config: 0x%x\n", old_config);
+    uint8_t old_config = 0;
+    return_code = ps2_controller__read_data(&old_config);
+    CHECK_SUCCESS();
+
     uint8_t new_config = (old_config | FIRST_PORT_INTERRUPT_ENABLED | SECOND_PORT_INTERRUPT_ENABLED | FIRST_PORT_TRANSLATION_ENABLED);
     send_command(WRITE_CONFIG_BYTE_CMD);
-    outb(DATA_PORT, new_config);
+    return_code = ps2_controller__send_data(new_config);
+    CHECK_SUCCESS();
 
     // Perform Controller Self Test
     send_command(TEST_PS2_CONTROLLER_CMD);
-    if (ps2_controller__read_data() != PS2_TEST_PASS) {
-        printf("ps2_controller__init failed, controller test failed.\n");
-        return -1;
+    return_code = ps2_controller__read_data(&data);
+    CHECK_SUCCESS();
+    if (data != PS2_TEST_PASS) {
+        return_code = RETURN_CODE_PS2_CONTROLLER__INIT_CONTROLLER_RESET_FAILED;
+        goto cleanup;
     }
 
     // TODO: Determine If There Are 2 Channels
-    bool is_two_channel = true;
+    bool is_two_channel = false;
 
     // Perform Interface Tests
     send_command(TEST_FIRST_PORT_CMD);
-    if (ps2_controller__read_data() != PORT_TEST_PASS) {
-        printf("ps2_controller__init failed, first port test failed.\n");
-        return -1;
+    ps2_controller__read_data(&data);
+    CHECK_SUCCESS();
+    if (data != PORT_TEST_PASS) {
+        return_code = RETURN_CODE_PS2_CONTROLLER__INIT_PORT_TEST_FAILED;
+        goto cleanup;
     }
     if (is_two_channel) {
         send_command(TEST_SECOND_PORT_CMD);
-        if (ps2_controller__read_data() != PORT_TEST_PASS) {
-            printf("ps2_controller__init failed, first port test failed.\n");
-            return -1;
+        ps2_controller__read_data(&data);
+        CHECK_SUCCESS();
+        if (data != PORT_TEST_PASS) {
+            return_code = RETURN_CODE_PS2_CONTROLLER__INIT_PORT_TEST_FAILED;
+            goto cleanup;
         }
     }
 
@@ -123,19 +150,24 @@ int ps2_controller__init() {
     }
 
     // Reset Devices
-    ps2_controller__send_data(RESEET_DEVICE_CMD);
-    uint8_t reset_res = ps2_controller__read_data();
-    if (reset_res != RESET_SUCCESS) {
-        printf("ps2_controller__init failed, first port reset failed - got 0x%x.\n", reset_res);
-        return -1;
-    }
-    reset_res = ps2_controller__read_data();
-    if (reset_res != 0xAA) {
-        printf("ps2_controller__init failed, first port reset failed - got 0x%x.\n", reset_res);
-        return -1;
+    return_code = ps2_controller__send_data(RESEET_DEVICE_CMD);
+    CHECK_SUCCESS();
+    return_code = ps2_controller__read_data(&data);
+    CHECK_SUCCESS();
+    if (data != RESET_SUCCESS) {
+        return_code = RETURN_CODE_PS2_CONTROLLER__INIT_DEVICE_RESET_FAILED;
+        goto cleanup;
+    } 
+    return_code = ps2_controller__read_data(&data);
+    CHECK_SUCCESS();
+    if (return_code != SELF_TEST_PASSED) {
+        return_code = RETURN_CODE_PS2_CONTROLLER__INIT_DEVICE_RESET_FAILED;
+        goto cleanup;
     }
     // TODO: reset second port device
 
-    ps2_controller__is_init = true;
-    return 0;
+    // ps2_controller__is_init = true;
+
+cleanup:
+    return return_code;
 }

@@ -9,6 +9,7 @@
 #include <driver/ata.h>
 #include <driver/pit.h>
 #include <driver/ps2_controller.h>
+#include <driver/ps2_keyboard.h>
 
 #include <arch-i386/gdt.h>
 
@@ -40,12 +41,15 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
 	ata_init(0);
 	fat_init();
 	pit_init();
-	if (ps2_controller__init() == -1) {
-		printf("ps2_controller__init failed!\n");
-	}
 	
 	printf("kernel main start ticks: %q\n", get_nanoseconds_since_boot());
 	init_multitasking();
+	if (ps2_controller__init() == -1) {
+		printf("ps2_controller__init failed!\n");
+	}
+	else {
+		ps2_keyboard__init();
+	}
 
 	// TCB *second_task = new_kernel_thread(thread_task, "second");
 	// new_kernel_thread(thread_task, "third");
