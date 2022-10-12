@@ -108,9 +108,6 @@ __attribute__((interrupt)) void irq1_handler(struct interrupt_frame* frame)
     if (ps2_keyboard__is_init) {
         ps2_keyboard__irq_handler();
     }
-    else {
-        printf("IP: %x, CS: %x, EFLAGS: %x - irq1 handler - ps2 controller\n", frame->EIP, frame->CS, frame->EFLAGS);
-    }
     PIC_sendEOI((unsigned char)1);
 }
 

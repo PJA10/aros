@@ -60,9 +60,7 @@ return_code_t ps2_controller__read_data(uint8_t *out_data) {
         }
         counter++;
     }
-    printf("reading\n");
     *out_data = inb(DATA_PORT);
-    printf("ps2_controller read: 0x%x\n", *out_data);
     return_code = RETURN_CODE_SUCCESS;
 
 cleanup:
@@ -111,7 +109,6 @@ return_code_t ps2_controller__init() {
     CHECK_SUCCESS();
 
     uint8_t new_config = (old_config | FIRST_PORT_INTERRUPT_ENABLED | SECOND_PORT_INTERRUPT_ENABLED) & ~FIRST_PORT_TRANSLATION_ENABLED;
-    printf("new_config: 0x%x\n", new_config);
     send_command(WRITE_CONFIG_BYTE_CMD);
     return_code = ps2_controller__send_data(new_config);
     CHECK_SUCCESS();
