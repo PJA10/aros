@@ -38,7 +38,7 @@
 
 #define WAIT_FOR_READY_TIMEOUT (100)
 
-bool ps2_controller__is_init = false;
+bool ps2_keyboard__is_init = false;
 
 static void send_command(uint8_t command) {
     outb(COMMAND_REG, command);
@@ -60,7 +60,9 @@ return_code_t ps2_controller__read_data(uint8_t *out_data) {
         }
         counter++;
     }
+    printf("reading\n");
     *out_data = inb(DATA_PORT);
+    printf("ps2_controller read: 0x%x\n", *out_data);
     return_code = RETURN_CODE_SUCCESS;
 
 cleanup:
@@ -108,7 +110,8 @@ return_code_t ps2_controller__init() {
     return_code = ps2_controller__read_data(&old_config);
     CHECK_SUCCESS();
 
-    uint8_t new_config = (old_config | FIRST_PORT_INTERRUPT_ENABLED | SECOND_PORT_INTERRUPT_ENABLED | FIRST_PORT_TRANSLATION_ENABLED);
+    uint8_t new_config = (old_config | FIRST_PORT_INTERRUPT_ENABLED | SECOND_PORT_INTERRUPT_ENABLED) & ~FIRST_PORT_TRANSLATION_ENABLED;
+    printf("new_config: 0x%x\n", new_config);
     send_command(WRITE_CONFIG_BYTE_CMD);
     return_code = ps2_controller__send_data(new_config);
     CHECK_SUCCESS();
@@ -160,13 +163,13 @@ return_code_t ps2_controller__init() {
     } 
     return_code = ps2_controller__read_data(&data);
     CHECK_SUCCESS();
-    if (return_code != SELF_TEST_PASSED) {
+    if (data != SELF_TEST_PASSED) {
         return_code = RETURN_CODE_PS2_CONTROLLER__INIT_DEVICE_RESET_FAILED;
         goto cleanup;
     }
     // TODO: reset second port device
 
-    // ps2_controller__is_init = true;
+    return_code = RETURN_CODE_SUCCESS;
 
 cleanup:
     return return_code;
