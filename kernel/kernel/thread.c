@@ -12,6 +12,14 @@
 
 #define KERNEL_STACK_SIZE 4096
 
+TCB *current_task_TCB;
+TCB *first_ready_task;
+TCB *last_ready_task;
+TCB *idle_task;
+int postpone_task_switches_counter;
+int task_switches_postponed_flag;
+uint64_t time_slice_remaining;
+
 
 /**
  * Caller has to hold big scheduler lock

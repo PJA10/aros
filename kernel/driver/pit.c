@@ -27,6 +27,7 @@
 #define TARGET_FREQ 1000 // Hz
 
 static uint32_t ticks;
+uint64_t ticks_to_nanoseconds;
 
 void set_mode(uint8_t channel, uint8_t access_mode, uint8_t operatint_mode) {
     uint8_t command = (uint8_t)((channel << 6) | access_mode << 4 | operatint_mode << 1);

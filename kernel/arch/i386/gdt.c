@@ -7,9 +7,11 @@
 
 static uint64_t create_descriptor(uint32_t base, uint32_t limit, uint16_t flag);
 
+tss_t tss;
 // TODO: (can be changed) use a global var of a new struct type to send the gdt ptr to load_gdt insted of the stack(which mabye isn't proporly seted up) - http://www.osdever.net/bkerndev/Docs/gdt.htm
 // TODO: Is the GDT still missing a TSS selector? - yes it does, we need it for interrupting from user space. It will point on the kernel's stack.
 static uint64_t GDT[6]; // each entry is 8 byte long
+
 
 void gdt_init(void) {
 	extern int load_gdt();

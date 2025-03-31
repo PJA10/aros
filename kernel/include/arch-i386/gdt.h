@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-struct tss_entry_struct {
+struct __attribute__ ((__packed__)) tss_entry_struct {
 	uint32_t prev_tss; // The previous TSS - with hardware task switching these form a kind of backward linked list.
 	uint32_t esp0;     // The stack pointer to load when changing to kernel mode.
 	uint32_t ss0;      // The stack segment to load when changing to kernel mode.
@@ -32,10 +32,10 @@ struct tss_entry_struct {
 	uint32_t ldt;
 	uint16_t trap;
 	uint16_t iomap_base;
-}__packed;
+};
 typedef struct tss_entry_struct tss_t;
 
-tss_t tss;
+extern tss_t tss;
 
 
 void gdt_init(void);

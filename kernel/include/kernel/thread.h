@@ -30,13 +30,21 @@ typedef struct {
 } semaphore_t;
 
 // accsesed from cs.S
-TCB *current_task_TCB;
-TCB *first_ready_task;
-TCB *last_ready_task;
-TCB *idle_task;
-int postpone_task_switches_counter;
-int task_switches_postponed_flag;
-uint64_t time_slice_remaining;
+// TCB *current_task_TCB;
+// TCB *first_ready_task;
+// TCB *last_ready_task;
+// TCB *idle_task;
+// int postpone_task_switches_counter;
+// int task_switches_postponed_flag;
+// uint64_t time_slice_remaining;
+
+extern TCB *current_task_TCB;
+extern TCB *first_ready_task;
+extern TCB *last_ready_task;
+extern TCB *idle_task;
+extern int postpone_task_switches_counter;
+extern int task_switches_postponed_flag;
+extern uint64_t time_slice_remaining;
 
 TCB *new_kernel_thread(void (*startingEIP)(), char *new_thred_name);
 void init_multitasking();
