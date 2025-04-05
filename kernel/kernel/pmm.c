@@ -35,7 +35,7 @@ static void *early_kmalloc(uint32_t sz, int align, uint32_t *phys);
 
 void pmm_init(multiboot_info_t* mbd, unsigned int magic) {
     // convert multiboot info address to virutal address cz paging in on
-    // TODO: add a scan to make sure multiiboot info is under 1 MB. it can conflict with kernel binary or be abpve 4MB and therefor not reachable right now (virtualizing only 4MB)
+    // TODO: add a scan to make sure multiiboot info is under 1 MB. it can conflict with kernel binary or be above 4MB and therefor not reachable right now (virtualizing only 4MB)
     mbd = VIRTUAL_ADDRESS(mbd);
     mbd->mmap_addr = (uint32_t) VIRTUAL_ADDRESS(mbd->mmap_addr);
 
