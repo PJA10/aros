@@ -40,9 +40,11 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
     return_code_t return_code = RETURN_CODE_UNINIALIZED;
 
     terminal_initialize();
-    init_serial();
     mm_init(mbd, magic);
-    ata_init(0);
+    return_code = init_serial();
+    CHECK_SUCCESS();
+    return_code = ata_init(0);
+    CHECK_SUCCESS();
     fat_init();
     pit_init();
     
@@ -52,6 +54,7 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic) {
     CHECK_SUCCESS();
     return_code = ps2_keyboard__init();
     CHECK_SUCCESS();
+	printf("ps2 keyboard initialized\n");
 
     // TCB *second_task = new_kernel_thread(thread_task, "second");
     // new_kernel_thread(thread_task, "third");

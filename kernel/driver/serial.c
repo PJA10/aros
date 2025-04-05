@@ -9,7 +9,8 @@ static int serial_received();
 /*
  * TODO: add  support for multiple serial ports and serial port address detection
  */
-void init_serial() {
+return_code_t init_serial() {
+	return_code_t return_code = RETURN_CODE_UNINIALIZED;
 	outb(PORT + 1, 0x00);    // Disable all interrupts
 	outb(PORT + 3, 0x80);    // Enable DLAB (set baud rate divisor)
 	outb(PORT + 0, 0x03);    // Set divisor to 3 (lo byte) 38400 baud
@@ -22,12 +23,17 @@ void init_serial() {
 
 	// Check if serial is faulty (i.e: not same byte as sent)
 	if (inb(PORT + 0) != 0xAE) {
-		return;
+		return_code = RETURN_CODE_INIT_SERIAL_TEST_CHIP_FAIL;
+		goto cleanup;
 	}
 
 	// If serial is not faulty set it in normal operation mode
 	// (not-loopback with IRQs enabled and OUT#1 and OUT#2 bits enabled)
 	outb(PORT + 4, 0x0F);
+	return_code = RETURN_CODE_SUCCESS;
+
+cleanup:
+	return return_code;
 }
 
 void write_serial(char a) {

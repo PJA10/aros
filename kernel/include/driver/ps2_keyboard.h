@@ -1,6 +1,8 @@
 #ifndef _DRIVER_PS2_KEYBOARD_H
 #define _DRIVER_PS2_KEYBOARD_H
 
+#include <common.h>
+
 enum keys_e {
     F1_KEY,
     F2_KEY,
@@ -26,7 +28,7 @@ enum keys_e {
     NUMBERLOCK_KEY,
 };
 
-int ps2_keyboard__init();
+return_code_t ps2_keyboard__init();
 void ps2_keyboard__irq_handler();
 
 #endif
